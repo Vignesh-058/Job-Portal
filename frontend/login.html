@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - JobPortal</title>
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body style="background-color: var(--bg-color); min-height: 100vh; display: flex; flex-direction: column;">
+  <nav class="navbar">
+    <div class="container">
+      <a href="../index.html" class="nav-brand">JobPortal</a>
+      <div class="nav-links">
+        <a href="./register.html" class="btn btn-outline">Register</a>
+      </div>
+    </div>
+  </nav>
+
+  <main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem;">
+    <div class="card auth-container" style="width: 100%; margin: 0;">
+      <h2 class="text-center mb-2">Welcome Back</h2>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" class="form-control" required placeholder="john@example.com">
+        </div>
+        <div class="form-group mb-2">
+          <label for="password">Password</label>
+          <input type="password" id="password" class="form-control" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; font-size: 1.1rem; padding: 0.75rem;">Login</button>
+      </form>
+      <p class="text-center mt-1 text-muted">
+        Don't have an account? <a href="./register.html">Register here</a>
+      </p>
+    </div>
+  </main>
+
+  <script src="./js/auth.js"></script>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerText;
+      
+      try {
+        submitBtn.innerText = 'Logging in...';
+        submitBtn.disabled = true;
+
+        const response = await fetch('http://localhost:5000/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('role', data.role);
+          localStorage.setItem('user', JSON.stringify(data));
+          
+          showToast('Login successful!');
+          
+          setTimeout(() => {
+            if (data.role === 'recruiter') {
+              window.location.href = './recruiter/dashboard.html';
+            } else {
+              window.location.href = './jobseeker/dashboard.html';
+            }
+          }, 1000);
+        } else {
+          showToast(data.message || 'Login failed', 'error');
+          submitBtn.innerText = originalText;
+          submitBtn.disabled = false;
+        }
+      } catch (error) {
+        showToast('Network error. Is the backend running?', 'error');
+        submitBtn.innerText = originalText;
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

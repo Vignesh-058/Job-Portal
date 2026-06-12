@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile - JobPortal</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <a href="../../index.html" class="nav-brand">JobPortal</a>
+      <div class="nav-links">
+        <span id="userName" style="font-weight: 600; margin-right: 1rem;"></span>
+        <button id="logoutBtn" class="btn btn-outline">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <a href="./dashboard.html">Dashboard</a>
+      <a href="./search-jobs.html">Search Jobs</a>
+      <a href="./applied-jobs.html">Applied Jobs</a>
+      <a href="./profile.html" class="active">My Profile</a>
+    </aside>
+
+    <main class="main-content">
+      <h2 class="mb-2">My Profile</h2>
+
+      <div class="card" style="max-width: 600px;">
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+          <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: 600;" id="userInitials">
+            U
+          </div>
+          <div>
+            <h3 id="profileName" style="margin-bottom: 0;">Loading...</h3>
+            <p id="profileEmail" class="text-muted"></p>
+            <span class="badge" style="background: var(--bg-color); color: var(--text-main); margin-top: 0.5rem; display: inline-block;">Job Seeker</span>
+          </div>
+        </div>
+
+        <form id="profileForm">
+          <div class="form-group">
+            <label for="bio">Bio</label>
+            <textarea id="bio" class="form-control" rows="4" placeholder="Tell us about yourself..."></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="skills">Skills (comma separated)</label>
+            <input type="text" id="skills" class="form-control" placeholder="e.g. HTML, CSS, JavaScript, React">
+          </div>
+          
+          <div class="grid grid-2">
+            <div class="form-group mb-2">
+              <label for="resume">Resume Link</label>
+              <input type="url" id="resume" class="form-control" placeholder="https://link-to-your-resume.com">
+            </div>
+            <div class="form-group mb-2">
+              <label for="portfolio">Portfolio URL (Optional)</label>
+              <input type="url" id="portfolio" class="form-control" placeholder="https://your-portfolio.com">
+            </div>
+          </div>
+
+          <div class="form-group mb-2">
+            <label for="linkedin">LinkedIn Profile (Optional)</label>
+            <input type="url" id="linkedin" class="form-control" placeholder="https://linkedin.com/in/yourprofile">
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Save Profile</button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user) {
+        document.getElementById('userName').innerText = user.name;
+        document.getElementById('profileName').innerText = user.name;
+        document.getElementById('profileEmail').innerText = user.email;
+        document.getElementById('userInitials').innerText = user.name.charAt(0).toUpperCase();
+      }
+
+      // Fetch full profile data
+      try {
+        const data = await authFetch('/auth/profile');
+        if (data.profile) {
+          document.getElementById('bio').value = data.profile.bio || '';
+          document.getElementById('skills').value = data.profile.skills ? data.profile.skills.join(', ') : '';
+          document.getElementById('resume').value = data.profile.resume || '';
+          document.getElementById('portfolio').value = data.profile.portfolio || '';
+          document.getElementById('linkedin').value = data.profile.linkedin || '';
+        }
+      } catch (error) {
+        showToast('Failed to load profile data', 'error');
+      }
+    });
+
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      const originalText = btn.innerText;
+
+      try {
+        btn.innerText = 'Saving...';
+        btn.disabled = true;
+
+        // Since we didn't define a profile update route in the initial prompt requirements,
+        // we will mock the save for now and show a toast.
+        // In a real app, this would hit a PUT /api/auth/profile route.
+        
+        /* 
+        const profileData = {
+          bio: document.getElementById('bio').value,
+          skills: document.getElementById('skills').value.split(',').map(s => s.trim()).filter(s => s),
+          resume: document.getElementById('resume').value
+        };
+        await authFetch('/auth/profile', { method: 'PUT', body: JSON.stringify(profileData) }); 
+        */
+
+        setTimeout(() => {
+          showToast('Profile updated successfully! (Mocked)');
+          btn.innerText = originalText;
+          btn.disabled = false;
+        }, 800);
+
+      } catch (error) {
+        showToast(error.message, 'error');
+        btn.innerText = originalText;
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

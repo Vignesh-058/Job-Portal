@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JobPortal - Find Your Dream Job</title>
+  <link rel="stylesheet" href="./frontend/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <div class="nav-brand">JobPortal</div>
+      <div class="nav-links">
+        <a href="./frontend/login.html" class="btn btn-outline">Login</a>
+        <a href="./frontend/register.html" class="btn btn-primary">Register</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <section class="hero p-2 text-center" style="background: linear-gradient(135deg, #0F172A 0%, #3B82F6 100%); color: white; padding: 6rem 2rem; border-bottom-left-radius: 40px; border-bottom-right-radius: 40px; margin-bottom: 2rem;">
+      <div class="container" style="max-width: 800px;">
+        <h1 style="font-size: 3.5rem; color: white; margin-bottom: 1.5rem; font-weight: 800; line-height: 1.1;">Find Your Dream Job Today</h1>
+        <p style="font-size: 1.25rem; margin-bottom: 2.5rem; opacity: 0.9; font-weight: 300;">Connecting talented professionals with top companies worldwide. Build your career with us.</p>
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+          <a href="./frontend/register.html?role=jobseeker" class="btn btn-primary" style="font-size: 1.1rem; padding: 0.875rem 2rem; border-radius: 999px;">I'm Looking for a Job</a>
+          <a href="./frontend/register.html?role=recruiter" class="btn" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); color: white; border: 1px solid rgba(255,255,255,0.2); font-size: 1.1rem; padding: 0.875rem 2rem; border-radius: 999px;">I'm Hiring</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="p-2">
+      <div class="container">
+        <h2 class="text-center mb-2" style="font-size: 2.5rem;">Featured Jobs</h2>
+        <div class="grid grid-3" id="featured-jobs">
+          <!-- Skeletons -->
+          <div class="card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text"></div></div>
+          <div class="card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text"></div></div>
+          <div class="card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text"></div></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="./frontend/js/auth.js"></script>
+  <script src="./frontend/js/jobs.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const jobsContainer = document.getElementById('featured-jobs');
+      try {
+        const response = await fetch('http://localhost:5000/api/jobs');
+        const jobs = await response.json();
+        
+        if (jobs.length === 0) {
+          jobsContainer.innerHTML = '<p class="text-center text-muted" style="grid-column: 1 / -1;">No active jobs found.</p>';
+          return;
+        }
+
+        jobsContainer.innerHTML = '';
+        jobs.slice(0, 6).forEach(job => {
+          const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(job.company)}&background=random&color=fff&rounded=true&bold=true`;
+          jobsContainer.innerHTML += `
+            <div class="card" style="display: flex; flex-direction: column;">
+              <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                <img src="${avatarUrl}" alt="${job.company}" style="width: 48px; height: 48px; border-radius: 50%; box-shadow: var(--shadow-sm);">
+                <div>
+                  <h3 style="color: var(--text-main); margin-bottom: 0.1rem; font-size: 1.1rem;">${job.title}</h3>
+                  <p class="text-muted" style="font-weight: 500; font-size: 0.9rem;">${job.company} • ${job.location}</p>
+                </div>
+              </div>
+              <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                <span class="badge" style="background: var(--bg-color); color: var(--text-muted); border: 1px solid var(--border-color);">${job.type.replace('-', ' ')}</span>
+                ${job.salary ? `<span class="badge" style="background: var(--bg-color); color: var(--text-muted); border: 1px solid var(--border-color);">${job.salary}</span>` : ''}
+              </div>
+              <p style="margin-bottom: 1.5rem; color: var(--text-muted); font-size: 0.9rem; flex-grow: 1;">
+                ${job.description.length > 100 ? job.description.substring(0, 100) + '...' : job.description}
+              </p>
+              <a href="./frontend/login.html" class="btn btn-primary" style="width: 100%; border-radius: 999px;">View Details</a>
+            </div>
+          `;
+        });
+      } catch (error) {
+        jobsContainer.innerHTML = '<p class="text-center text-danger" style="grid-column: 1 / -1;">Failed to load jobs.</p>';
+      }
+    });
+  </script>
+</body>
+</html>

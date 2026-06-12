@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - JobPortal</title>
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body style="background-color: var(--bg-color); min-height: 100vh; display: flex; flex-direction: column;">
+  <nav class="navbar">
+    <div class="container">
+      <a href="../index.html" class="nav-brand">JobPortal</a>
+      <div class="nav-links">
+        <a href="./login.html" class="btn btn-outline">Login</a>
+      </div>
+    </div>
+  </nav>
+
+  <main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem;">
+    <div class="card auth-container" style="width: 100%; margin: 0;">
+      <h2 class="text-center mb-2">Create an Account</h2>
+      <form id="registerForm">
+        <div class="form-group" style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+          <label style="flex: 1; cursor: pointer;">
+            <input type="radio" name="role" value="jobseeker" checked style="margin-right: 0.5rem;">
+            I'm a Job Seeker
+          </label>
+          <label style="flex: 1; cursor: pointer;">
+            <input type="radio" name="role" value="recruiter" style="margin-right: 0.5rem;">
+            I'm a Recruiter
+          </label>
+        </div>
+        <div class="form-group">
+          <label for="name">Full Name</label>
+          <input type="text" id="name" class="form-control" required placeholder="John Doe">
+        </div>
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" class="form-control" required placeholder="john@example.com">
+        </div>
+        <div class="form-group mb-2">
+          <label for="password">Password</label>
+          <input type="password" id="password" class="form-control" required placeholder="••••••••" minlength="6">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; font-size: 1.1rem; padding: 0.75rem;">Register</button>
+      </form>
+      <p class="text-center mt-1 text-muted">
+        Already have an account? <a href="./login.html">Login here</a>
+      </p>
+    </div>
+  </main>
+
+  <script src="./js/auth.js"></script>
+  <script>
+    // Pre-select role based on URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const roleParam = urlParams.get('role');
+    if (roleParam === 'recruiter' || roleParam === 'jobseeker') {
+      document.querySelector(`input[name="role"][value="${roleParam}"]`).checked = true;
+    }
+
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const role = document.querySelector('input[name="role"]:checked').value;
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerText;
+      
+      try {
+        submitBtn.innerText = 'Creating account...';
+        submitBtn.disabled = true;
+
+        const response = await fetch('http://localhost:5000/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password, role })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('role', data.role);
+          localStorage.setItem('user', JSON.stringify(data));
+          
+          showToast('Account created successfully!');
+          
+          setTimeout(() => {
+            if (data.role === 'recruiter') {
+              window.location.href = './recruiter/dashboard.html';
+            } else {
+              window.location.href = './jobseeker/dashboard.html';
+            }
+          }, 1000);
+        } else {
+          showToast(data.message || 'Registration failed', 'error');
+          submitBtn.innerText = originalText;
+          submitBtn.disabled = false;
+        }
+      } catch (error) {
+        showToast('Network error. Is the backend running?', 'error');
+        submitBtn.innerText = originalText;
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

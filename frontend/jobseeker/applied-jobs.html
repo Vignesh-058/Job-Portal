@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Applied Jobs - JobPortal</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <a href="../../index.html" class="nav-brand">JobPortal</a>
+      <div class="nav-links">
+        <span id="userName" style="font-weight: 600; margin-right: 1rem;"></span>
+        <button id="logoutBtn" class="btn btn-outline">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <a href="./dashboard.html">Dashboard</a>
+      <a href="./search-jobs.html">Search Jobs</a>
+      <a href="./applied-jobs.html" class="active">Applied Jobs</a>
+      <a href="./profile.html">My Profile</a>
+    </aside>
+
+    <main class="main-content">
+      <div style="display: flex; justify-content: space-between; align-items: center;" class="mb-2">
+        <h2>My Applications</h2>
+        <a href="./search-jobs.html" class="btn btn-primary">Find More Jobs</a>
+      </div>
+
+      <div class="card">
+        <div id="applicationsContainer">
+          <p class="text-muted text-center p-2">Loading applications...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/auth.js"></script>
+  <script src="../js/applications.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user) document.getElementById('userName').innerText = user.name;
+      loadApplications();
+    });
+
+    async function loadApplications() {
+      const container = document.getElementById('applicationsContainer');
+      try {
+        const apps = await getMyApplications();
+        
+        if (apps.length === 0) {
+          container.innerHTML = '<p class="text-muted text-center p-2">You haven\'t applied to any jobs yet.</p>';
+          return;
+        }
+
+        let html = '<table><thead><tr><th>Job Title</th><th>Company</th><th>Location</th><th>Applied On</th><th>Status</th></tr></thead><tbody>';
+        apps.forEach(app => {
+          const date = new Date(app.appliedAt).toLocaleDateString();
+          const badgeClass = `badge-${app.status}`;
+          html += `
+            <tr>
+              <td style="font-weight: 500; color: var(--primary);">${app.jobId?.title || 'Unknown Job'}</td>
+              <td>${app.jobId?.company || 'Unknown Company'}</td>
+              <td>${app.jobId?.location || 'Unknown Location'}</td>
+              <td>${date}</td>
+              <td>
+                <span class="badge ${badgeClass}" style="text-transform: capitalize;">${app.status}</span>
+              </td>
+            </tr>
+          `;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+      } catch (error) {
+        container.innerHTML = '<p class="text-danger p-2 text-center">Failed to load applications.</p>';
+      }
+    }
+  </script>
+</body>
+</html>

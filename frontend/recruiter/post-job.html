@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Post a Job - JobPortal</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <a href="../../index.html" class="nav-brand">JobPortal</a>
+      <div class="nav-links">
+        <span id="userName" style="font-weight: 600; margin-right: 1rem;"></span>
+        <button id="logoutBtn" class="btn btn-outline">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <a href="./dashboard.html">Dashboard</a>
+      <a href="./post-job.html" class="active">Post a Job</a>
+      <a href="./manage-jobs.html">Manage Jobs</a>
+    </aside>
+
+    <main class="main-content">
+      <div class="card" style="max-width: 800px; margin: 0 auto;">
+        <h2 class="mb-2">Post a New Job</h2>
+        
+        <form id="postJobForm">
+          <div class="grid grid-2">
+            <div class="form-group">
+              <label for="title">Job Title *</label>
+              <input type="text" id="title" class="form-control" required placeholder="e.g. Senior Frontend Developer">
+            </div>
+            <div class="form-group">
+              <label for="company">Company Name *</label>
+              <input type="text" id="company" class="form-control" required placeholder="e.g. TechCorp Inc.">
+            </div>
+          </div>
+          
+          <div class="grid grid-2">
+            <div class="form-group">
+              <label for="location">Location *</label>
+              <input type="text" id="location" class="form-control" required placeholder="e.g. New York, NY or Remote">
+            </div>
+            <div class="form-group">
+              <label for="type">Job Type *</label>
+              <select id="type" class="form-control" required>
+                <option value="full-time">Full-Time</option>
+                <option value="part-time">Part-Time</option>
+                <option value="remote">Remote</option>
+                <option value="internship">Internship</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="salary">Salary Range</label>
+            <input type="text" id="salary" class="form-control" placeholder="e.g. $80,000 - $120,000">
+          </div>
+
+          <div class="form-group">
+            <label for="description">Job Description *</label>
+            <textarea id="description" class="form-control" rows="5" required placeholder="Describe the responsibilities and requirements..."></textarea>
+          </div>
+
+          <div class="form-group mb-2">
+            <label for="requirements">Requirements (comma separated)</label>
+            <input type="text" id="requirements" class="form-control" placeholder="e.g. React, Node.js, 3+ years experience">
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="font-size: 1.1rem; padding: 0.75rem 2rem;">Post Job</button>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/auth.js"></script>
+  <script src="../js/jobs.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user) document.getElementById('userName').innerText = user.name;
+    });
+
+    document.getElementById('postJobForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerText;
+      
+      try {
+        submitBtn.innerText = 'Posting...';
+        submitBtn.disabled = true;
+
+        const jobData = {
+          title: document.getElementById('title').value,
+          company: document.getElementById('company').value,
+          location: document.getElementById('location').value,
+          type: document.getElementById('type').value,
+          salary: document.getElementById('salary').value,
+          description: document.getElementById('description').value,
+          requirements: document.getElementById('requirements').value.split(',').map(r => r.trim()).filter(r => r)
+        };
+
+        await createJob(jobData);
+        
+        showToast('Job posted successfully!');
+        e.target.reset();
+        
+        setTimeout(() => {
+          window.location.href = './manage-jobs.html';
+        }, 1500);
+      } catch (error) {
+        showToast(error.message || 'Failed to post job', 'error');
+      } finally {
+        submitBtn.innerText = originalText;
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

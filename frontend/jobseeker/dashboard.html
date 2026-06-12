@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Seeker Dashboard - JobPortal</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <a href="../../index.html" class="nav-brand">JobPortal</a>
+      <div class="nav-links">
+        <span id="userName" style="font-weight: 600; margin-right: 1rem;"></span>
+        <button id="logoutBtn" class="btn btn-outline">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <a href="./dashboard.html" class="active">Dashboard</a>
+      <a href="./search-jobs.html">Search Jobs</a>
+      <a href="./applied-jobs.html">Applied Jobs</a>
+      <a href="./profile.html">My Profile</a>
+    </aside>
+
+    <main class="main-content">
+      <h2 class="mb-2">Welcome, <span id="welcomeName">Job Seeker</span></h2>
+      
+      <div class="grid grid-2 mb-2">
+        <div class="card" style="border-left: 4px solid var(--primary);">
+          <h3 class="text-muted" style="font-size: 1rem; margin-bottom: 0.5rem;">Jobs Applied</h3>
+          <p id="jobsApplied" style="font-size: 2.5rem; font-weight: 700; color: var(--primary);">0</p>
+        </div>
+        <div class="card" style="border-left: 4px solid var(--accent);">
+          <h3 class="text-muted" style="font-size: 1rem; margin-bottom: 0.5rem;">Shortlisted Applications</h3>
+          <p id="shortlistedApps" style="font-size: 2.5rem; font-weight: 700; color: var(--accent);">0</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center;" class="mb-1">
+          <h3>Recent Applications</h3>
+          <a href="./search-jobs.html" class="btn btn-primary">Find More Jobs</a>
+        </div>
+        <div id="recentAppsContainer">
+          <p class="text-muted">Loading...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/auth.js"></script>
+  <script src="../js/applications.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user) {
+        document.getElementById('userName').innerText = user.name;
+        document.getElementById('welcomeName').innerText = user.name;
+      }
+
+      try {
+        const apps = await getMyApplications();
+        
+        document.getElementById('jobsApplied').innerText = apps.length;
+        document.getElementById('shortlistedApps').innerText = apps.filter(a => a.status === 'shortlisted').length;
+        
+        const container = document.getElementById('recentAppsContainer');
+        if (apps.length === 0) {
+          container.innerHTML = '<p class="text-muted">You haven\'t applied to any jobs yet.</p>';
+          return;
+        }
+
+        let html = '<table><thead><tr><th>Job Title</th><th>Company</th><th>Status</th><th>Applied On</th></tr></thead><tbody>';
+        apps.slice(0, 5).forEach(app => {
+          const date = new Date(app.appliedAt).toLocaleDateString();
+          const badgeClass = `badge-${app.status}`;
+          html += `
+            <tr>
+              <td style="font-weight: 500;">${app.jobId?.title || 'Unknown Job'}</td>
+              <td>${app.jobId?.company || 'Unknown Company'}</td>
+              <td>
+                <span class="badge ${badgeClass}" style="text-transform: capitalize;">${app.status}</span>
+              </td>
+              <td>${date}</td>
+            </tr>
+          `;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+      } catch (error) {
+        showToast('Error loading dashboard data', 'error');
+      }
+    });
+  </script>
+</body>
+</html>

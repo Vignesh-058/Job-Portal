@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Jobs - JobPortal</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .job-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .job-modal.active { display: flex; }
+    .job-modal-content {
+      background: white;
+      padding: 2rem;
+      border-radius: var(--border-radius);
+      max-width: 600px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <a href="../../index.html" class="nav-brand">JobPortal</a>
+      <div class="nav-links">
+        <span id="userName" style="font-weight: 600; margin-right: 1rem;"></span>
+        <button id="logoutBtn" class="btn btn-outline">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <a href="./dashboard.html">Dashboard</a>
+      <a href="./search-jobs.html" class="active">Search Jobs</a>
+      <a href="./applied-jobs.html">Applied Jobs</a>
+      <a href="./profile.html">My Profile</a>
+    </aside>
+
+    <main class="main-content">
+      <h2 class="mb-2">Find Jobs</h2>
+      
+      <div class="card mb-2">
+        <div class="grid grid-3">
+          <input type="text" id="searchInput" class="form-control" placeholder="Search by job title or company...">
+          <input type="text" id="locationInput" class="form-control" placeholder="Location...">
+          <select id="typeFilter" class="form-control">
+            <option value="">All Job Types</option>
+            <option value="full-time">Full-Time</option>
+            <option value="part-time">Part-Time</option>
+            <option value="remote">Remote</option>
+            <option value="internship">Internship</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-2" id="jobsGrid">
+        <!-- Skeletons -->
+        <div class="card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text"></div></div>
+        <div class="card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text"></div></div>
+        <div class="card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text"></div></div>
+        <div class="card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text"></div></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Job Details Modal -->
+  <div class="job-modal" id="jobModal">
+    <div class="job-modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+        <div>
+          <h2 id="modalTitle" style="color: var(--primary);"></h2>
+          <p id="modalCompany" class="text-muted" style="font-size: 1.1rem;"></p>
+        </div>
+        <button class="btn btn-outline" onclick="closeModal()" style="padding: 0.25rem 0.5rem;">✕</button>
+      </div>
+      
+      <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;" id="modalBadges"></div>
+      
+      <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Job Description</h3>
+      <p id="modalDescription" style="margin-bottom: 1.5rem; color: var(--text-muted);"></p>
+      
+      <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Requirements</h3>
+      <ul id="modalRequirements" style="margin-bottom: 1.5rem; padding-left: 1.5rem; color: var(--text-muted);"></ul>
+      
+      <div class="form-group">
+        <label for="coverLetter">Cover Letter (Optional)</label>
+        <textarea id="coverLetter" class="form-control" rows="3" placeholder="Why are you a good fit for this role?"></textarea>
+      </div>
+      
+      <button id="applyBtn" class="btn btn-primary" style="width: 100%;">Apply Now</button>
+    </div>
+  </div>
+
+  <script src="../js/auth.js"></script>
+  <script src="../js/jobs.js"></script>
+  <script src="../js/applications.js"></script>
+  <script>
+    let allJobs = [];
+    let currentJobId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user) document.getElementById('userName').innerText = user.name;
+      loadAllJobs();
+      
+      document.getElementById('searchInput').addEventListener('input', filterJobs);
+      document.getElementById('locationInput').addEventListener('input', filterJobs);
+      document.getElementById('typeFilter').addEventListener('change', filterJobs);
+    });
+
+    async function loadAllJobs() {
+      try {
+        allJobs = await getJobs();
+        renderJobs(allJobs);
+      } catch (error) {
+        document.getElementById('jobsGrid').innerHTML = '<p class="text-danger">Failed to load jobs.</p>';
+      }
+    }
+
+    function filterJobs() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const location = document.getElementById('locationInput').value.toLowerCase();
+      const type = document.getElementById('typeFilter').value;
+
+      const filtered = allJobs.filter(job => {
+        const matchesSearch = job.title.toLowerCase().includes(search) || job.company.toLowerCase().includes(search);
+        const matchesLocation = job.location.toLowerCase().includes(location);
+        const matchesType = type ? job.type === type : true;
+        return matchesSearch && matchesLocation && matchesType;
+      });
+
+      renderJobs(filtered);
+    }
+
+    function renderJobs(jobs) {
+      const grid = document.getElementById('jobsGrid');
+      
+      if (jobs.length === 0) {
+        grid.innerHTML = '<p class="text-muted text-center" style="grid-column: 1 / -1;">No jobs found matching your criteria.</p>';
+        return;
+      }
+
+      let html = '';
+      jobs.forEach(job => {
+        const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(job.company)}&background=random&color=fff&rounded=true&bold=true`;
+        html += `
+          <div class="card" style="display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+              <img src="${avatarUrl}" alt="${job.company}" style="width: 48px; height: 48px; border-radius: 50%; box-shadow: var(--shadow-sm);">
+              <div>
+                <h3 style="color: var(--text-main); margin-bottom: 0.1rem; font-size: 1.1rem;">${job.title}</h3>
+                <p class="text-muted" style="font-weight: 500; font-size: 0.9rem;">${job.company} • ${job.location}</p>
+              </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+              <span class="badge" style="background: var(--bg-color); color: var(--text-muted); border: 1px solid var(--border-color);">${job.type.replace('-', ' ')}</span>
+              ${job.salary ? `<span class="badge" style="background: var(--bg-color); color: var(--text-muted); border: 1px solid var(--border-color);">${job.salary}</span>` : ''}
+            </div>
+            <p style="margin-bottom: 1.5rem; color: var(--text-muted); font-size: 0.9rem; flex-grow: 1;">
+              ${job.description.length > 100 ? job.description.substring(0, 100) + '...' : job.description}
+            </p>
+            <button onclick="openModal('${job._id}')" class="btn btn-outline" style="width: 100%;">View Details & Apply</button>
+          </div>
+        `;
+      });
+      grid.innerHTML = html;
+    }
+
+    async function openModal(jobId) {
+      currentJobId = jobId;
+      try {
+        const job = await getJobById(jobId);
+        document.getElementById('modalTitle').innerText = job.title;
+        document.getElementById('modalCompany').innerText = `${job.company} • ${job.location}`;
+        
+        let badgesHtml = `<span class="badge" style="background: var(--border-color); color: var(--text-main);">${job.type}</span>`;
+        if (job.salary) {
+          badgesHtml += `<span class="badge" style="background: var(--bg-color); color: var(--text-muted); border: 1px solid var(--border-color);">${job.salary}</span>`;
+        }
+        document.getElementById('modalBadges').innerHTML = badgesHtml;
+        
+        document.getElementById('modalDescription').innerText = job.description;
+        
+        const reqList = document.getElementById('modalRequirements');
+        if (job.requirements && job.requirements.length > 0) {
+          reqList.innerHTML = job.requirements.map(req => `<li>${req}</li>`).join('');
+        } else {
+          reqList.innerHTML = '<li>No specific requirements listed.</li>';
+        }
+        
+        document.getElementById('coverLetter').value = '';
+        document.getElementById('jobModal').classList.add('active');
+      } catch (error) {
+        showToast('Error loading job details', 'error');
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('jobModal').classList.remove('active');
+      currentJobId = null;
+    }
+
+    document.getElementById('applyBtn').addEventListener('click', async () => {
+      if (!currentJobId) return;
+      const btn = document.getElementById('applyBtn');
+      const originalText = btn.innerText;
+      
+      try {
+        btn.innerText = 'Applying...';
+        btn.disabled = true;
+        
+        const coverLetter = document.getElementById('coverLetter').value;
+        await applyForJob(currentJobId, coverLetter);
+        
+        showToast('Successfully applied for the job!');
+        closeModal();
+      } catch (error) {
+        showToast(error.message, 'error');
+      } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
