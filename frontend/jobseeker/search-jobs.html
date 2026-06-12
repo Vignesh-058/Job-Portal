@@ -67,8 +67,13 @@
         <!-- Skeletons -->
         <div class="card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text"></div></div>
         <div class="card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text"></div></div>
-        <div class="card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text"></div></div>
-        <div class="card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text"></div></div>
+      </div>
+
+      <!-- Pagination UI -->
+      <div id="pagination" class="flex justify-between align-center mt-2" style="background: var(--card-bg); padding: 1rem; border-radius: var(--border-radius); display: none;">
+        <button id="prevPageBtn" class="btn btn-outline" disabled>Previous</button>
+        <span id="pageInfo" style="font-weight: 600;">Page 1 of 1</span>
+        <button id="nextPageBtn" class="btn btn-outline" disabled>Next</button>
       </div>
     </main>
   </div>
@@ -97,7 +102,10 @@
         <textarea id="coverLetter" class="form-control" rows="3" placeholder="Why are you a good fit for this role?"></textarea>
       </div>
       
-      <button id="applyBtn" class="btn btn-primary" style="width: 100%;">Apply Now</button>
+      <div style="display: flex; gap: 1rem;">
+        <button id="applyBtn" class="btn btn-primary" style="flex: 1;">Apply Now</button>
+        <button id="saveJobBtn" class="btn btn-outline" style="flex: 1;">Save Job</button>
+      </div>
     </div>
   </div>
 
@@ -105,41 +113,63 @@
   <script src="../js/jobs.js"></script>
   <script src="../js/applications.js"></script>
   <script>
-    let allJobs = [];
-    let currentJobId = null;
+    let currentPage = 1;
+    let totalPages = 1;
 
     document.addEventListener('DOMContentLoaded', () => {
       const user = JSON.parse(localStorage.getItem('user'));
       if (user) document.getElementById('userName').innerText = user.name;
-      loadAllJobs();
       
-      document.getElementById('searchInput').addEventListener('input', filterJobs);
-      document.getElementById('locationInput').addEventListener('input', filterJobs);
-      document.getElementById('typeFilter').addEventListener('change', filterJobs);
+      // Debounce search
+      let timeout = null;
+      const delayedSearch = () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          currentPage = 1;
+          fetchJobs();
+        }, 500);
+      };
+
+      document.getElementById('searchInput').addEventListener('input', delayedSearch);
+      document.getElementById('locationInput').addEventListener('input', delayedSearch);
+      document.getElementById('typeFilter').addEventListener('change', () => { currentPage = 1; fetchJobs(); });
+      
+      document.getElementById('prevPageBtn').addEventListener('click', () => {
+        if (currentPage > 1) { currentPage--; fetchJobs(); }
+      });
+      document.getElementById('nextPageBtn').addEventListener('click', () => {
+        if (currentPage < totalPages) { currentPage++; fetchJobs(); }
+      });
+
+      fetchJobs();
     });
 
-    async function loadAllJobs() {
+    async function fetchJobs() {
+      const title = document.getElementById('searchInput').value;
+      const location = document.getElementById('locationInput').value;
+      const type = document.getElementById('typeFilter').value;
+      
+      let url = `http://localhost:5000/api/jobs?page=${currentPage}&limit=6`;
+      if (title) url += `&title=${encodeURIComponent(title)}`;
+      if (location) url += `&location=${encodeURIComponent(location)}`;
+      if (type) url += `&jobType=${encodeURIComponent(type)}`;
+
       try {
-        allJobs = await getJobs();
-        renderJobs(allJobs);
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        if (!res.ok) throw new Error(data.message);
+        
+        totalPages = data.totalPages;
+        document.getElementById('pageInfo').innerText = `Page ${data.currentPage} of ${data.totalPages || 1}`;
+        document.getElementById('prevPageBtn').disabled = data.currentPage <= 1;
+        document.getElementById('nextPageBtn').disabled = data.currentPage >= data.totalPages;
+        document.getElementById('pagination').style.display = 'flex';
+
+        renderJobs(data.data);
       } catch (error) {
         document.getElementById('jobsGrid').innerHTML = '<p class="text-danger">Failed to load jobs.</p>';
       }
-    }
-
-    function filterJobs() {
-      const search = document.getElementById('searchInput').value.toLowerCase();
-      const location = document.getElementById('locationInput').value.toLowerCase();
-      const type = document.getElementById('typeFilter').value;
-
-      const filtered = allJobs.filter(job => {
-        const matchesSearch = job.title.toLowerCase().includes(search) || job.company.toLowerCase().includes(search);
-        const matchesLocation = job.location.toLowerCase().includes(location);
-        const matchesType = type ? job.type === type : true;
-        return matchesSearch && matchesLocation && matchesType;
-      });
-
-      renderJobs(filtered);
     }
 
     function renderJobs(jobs) {
@@ -152,14 +182,14 @@
 
       let html = '';
       jobs.forEach(job => {
-        const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(job.company)}&background=random&color=fff&rounded=true&bold=true`;
+        const avatarUrl = job.companyId?.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(job.companyId?.name || 'Company')}&background=random&color=fff&rounded=true&bold=true`;
         html += `
           <div class="card" style="display: flex; flex-direction: column;">
             <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-              <img src="${avatarUrl}" alt="${job.company}" style="width: 48px; height: 48px; border-radius: 50%; box-shadow: var(--shadow-sm);">
+              <img src="${avatarUrl}" alt="${job.companyId?.name || 'Company'}" style="width: 48px; height: 48px; border-radius: 50%; box-shadow: var(--shadow-sm); object-fit: cover;">
               <div>
                 <h3 style="color: var(--text-main); margin-bottom: 0.1rem; font-size: 1.1rem;">${job.title}</h3>
-                <p class="text-muted" style="font-weight: 500; font-size: 0.9rem;">${job.company} • ${job.location}</p>
+                <p class="text-muted" style="font-weight: 500; font-size: 0.9rem;">${job.companyId?.name || 'Unknown Company'} • ${job.location}</p>
               </div>
             </div>
             <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
@@ -181,7 +211,7 @@
       try {
         const job = await getJobById(jobId);
         document.getElementById('modalTitle').innerText = job.title;
-        document.getElementById('modalCompany').innerText = `${job.company} • ${job.location}`;
+        document.getElementById('modalCompany').innerText = `${job.companyId?.name || 'Unknown Company'} • ${job.location}`;
         
         let badgesHtml = `<span class="badge" style="background: var(--border-color); color: var(--text-main);">${job.type}</span>`;
         if (job.salary) {
@@ -229,6 +259,21 @@
       } finally {
         btn.innerText = originalText;
         btn.disabled = false;
+      }
+    });
+
+    document.getElementById('saveJobBtn').addEventListener('click', async () => {
+      if (!currentJobId) return;
+      try {
+        const res = await fetch(`http://localhost:5000/api/saved-jobs/${currentJobId}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        showToast('Job saved successfully!');
+      } catch (error) {
+        showToast(error.message, 'error');
       }
     });
   </script>

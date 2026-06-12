@@ -17,8 +17,20 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['jobseeker', 'recruiter'],
+    enum: ['jobseeker', 'recruiter', 'admin'],
     required: true,
+  },
+  isBlocked: {
+    type: Boolean,
+    default: false,
+  },
+  resumeUrl: {
+    type: String,
+    default: ''
+  },
+  resumePublicId: {
+    type: String,
+    default: ''
   },
   profile: {
     skills: {

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifications - JobPortal</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <a href="../../index.html" class="nav-brand">JobPortal</a>
+      <div class="nav-links">
+        <span id="userName" style="font-weight: 600; margin-right: 1rem;"></span>
+        <button id="themeToggle" class="btn btn-outline" style="padding: 0.5rem; border-radius: 50%;">🌙</button>
+        <button id="logoutBtn" class="btn btn-outline">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="dashboard-layout">
+    <aside class="sidebar" id="sidebarNav">
+      <!-- Will be injected based on role -->
+    </aside>
+
+    <main class="main-content">
+      <h2 class="mb-2">Notifications</h2>
+      <div class="card" id="notificationsList">
+        <p class="text-muted">Loading notifications...</p>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/auth.js"></script>
+  <script>
+    const themeToggle = document.getElementById('themeToggle');
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    if (currentTheme === 'dark') {
+      document.body.setAttribute('data-theme', 'dark');
+      if (themeToggle) themeToggle.textContent = '☀️';
+    }
+    if (themeToggle) {
+      themeToggle.addEventListener('click', () => {
+        let theme = document.body.getAttribute('data-theme');
+        if (theme === 'dark') {
+          document.body.removeAttribute('data-theme');
+          localStorage.setItem('theme', 'light');
+          themeToggle.textContent = '🌙';
+        } else {
+          document.body.setAttribute('data-theme', 'dark');
+          localStorage.setItem('theme', 'dark');
+          themeToggle.textContent = '☀️';
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user) {
+        document.getElementById('userName').innerText = user.name;
+        
+        // Setup sidebar
+        const sidebar = document.getElementById('sidebarNav');
+        if (user.role === 'jobseeker') {
+          sidebar.innerHTML = `
+            <a href="./jobseeker/dashboard.html">Dashboard</a>
+            <a href="./jobseeker/search-jobs.html">Search Jobs</a>
+            <a href="./jobseeker/saved-jobs.html">Saved Jobs</a>
+            <a href="./jobseeker/applied-jobs.html">Applied Jobs</a>
+            <a href="./jobseeker/profile.html">My Profile</a>
+          `;
+        } else if (user.role === 'recruiter') {
+          sidebar.innerHTML = `
+            <a href="./recruiter/dashboard.html">Dashboard</a>
+            <a href="./recruiter/post-job.html">Post a Job</a>
+            <a href="./recruiter/manage-jobs.html">Manage Jobs</a>
+            <a href="./recruiter/view-applicants.html">View Applicants</a>
+          `;
+        }
+      }
+      
+      try {
+        const res = await fetch('http://localhost:5000/api/notifications', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const data = await res.json();
+        
+        const list = document.getElementById('notificationsList');
+        if (data.length === 0) {
+          list.innerHTML = '<p class="text-muted text-center">You have no notifications.</p>';
+          return;
+        }
+
+        let html = '';
+        data.forEach(n => {
+          html += `
+            <div style="padding: 1rem; border-bottom: 1px solid var(--border-color); ${!n.read ? 'background: var(--bg-color);' : ''}">
+              <div class="flex justify-between align-center mb-1">
+                <h4 style="margin: 0;">${n.title}</h4>
+                <small class="text-muted">${new Date(n.createdAt).toLocaleDateString()}</small>
+              </div>
+              <p class="text-muted mb-1">${n.message}</p>
+              ${!n.read ? `<button onclick="markRead('${n._id}')" class="btn btn-outline" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;">Mark as Read</button>` : ''}
+            </div>
+          `;
+        });
+        list.innerHTML = html;
+      } catch (error) {
+        document.getElementById('notificationsList').innerHTML = '<p class="text-danger">Failed to load notifications.</p>';
+      }
+    });
+
+    window.markRead = async (id) => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/notifications/${id}/read`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (res.ok) window.location.reload();
+      } catch (error) {
+        showToast('Failed to mark notification as read', 'error');
+      }
+    };
+  </script>
+</body>
+</html>

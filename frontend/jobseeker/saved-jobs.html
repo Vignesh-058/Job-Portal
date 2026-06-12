@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saved Jobs - JobPortal</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <a href="../../index.html" class="nav-brand">JobPortal</a>
+      <div class="nav-links">
+        <span id="userName" style="font-weight: 600; margin-right: 1rem;"></span>
+        <button id="themeToggle" class="btn btn-outline" style="padding: 0.5rem; border-radius: 50%;">🌙</button>
+        <button id="logoutBtn" class="btn btn-outline">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <a href="./dashboard.html">Dashboard</a>
+      <a href="./search-jobs.html">Search Jobs</a>
+      <a href="./saved-jobs.html" class="active">Saved Jobs</a>
+      <a href="./applied-jobs.html">Applied Jobs</a>
+      <a href="./profile.html">My Profile</a>
+    </aside>
+
+    <main class="main-content">
+      <h2 class="mb-2">Saved Jobs</h2>
+      <div class="grid grid-2" id="savedJobsGrid">
+        <p class="text-muted">Loading saved jobs...</p>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/auth.js"></script>
+  <script>
+    const themeToggle = document.getElementById('themeToggle');
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    if (currentTheme === 'dark') {
+      document.body.setAttribute('data-theme', 'dark');
+      if (themeToggle) themeToggle.textContent = '☀️';
+    }
+    if (themeToggle) {
+      themeToggle.addEventListener('click', () => {
+        let theme = document.body.getAttribute('data-theme');
+        if (theme === 'dark') {
+          document.body.removeAttribute('data-theme');
+          localStorage.setItem('theme', 'light');
+          themeToggle.textContent = '🌙';
+        } else {
+          document.body.setAttribute('data-theme', 'dark');
+          localStorage.setItem('theme', 'dark');
+          themeToggle.textContent = '☀️';
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user) document.getElementById('userName').innerText = user.name;
+      
+      try {
+        const res = await fetch('http://localhost:5000/api/saved-jobs', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const data = await res.json();
+        
+        const grid = document.getElementById('savedJobsGrid');
+        if (data.length === 0) {
+          grid.innerHTML = '<p class="text-muted" style="grid-column: 1 / -1;">You have no saved jobs.</p>';
+          return;
+        }
+
+        let html = '';
+        data.forEach(item => {
+          const job = item.jobId;
+          const avatarUrl = job.companyId?.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(job.companyId?.name || 'Company')}&background=random&color=fff&rounded=true&bold=true`;
+          
+          html += `
+            <div class="card" style="display: flex; flex-direction: column;">
+              <div style="display: flex; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                  <img src="${avatarUrl}" alt="${job.companyId?.name || 'Company'}" style="width: 48px; height: 48px; border-radius: 50%; box-shadow: var(--shadow-sm); object-fit: cover;">
+                  <div>
+                    <h3 style="color: var(--text-main); margin-bottom: 0.1rem; font-size: 1.1rem;">${job.title}</h3>
+                    <p class="text-muted" style="font-weight: 500; font-size: 0.9rem;">${job.companyId?.name || 'Unknown Company'} • ${job.location}</p>
+                  </div>
+                </div>
+                <button onclick="removeSavedJob('${item._id}')" class="btn btn-outline" style="border: none; padding: 0.25rem;">❌</button>
+              </div>
+              <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                <span class="badge" style="background: var(--bg-color); color: var(--text-muted); border: 1px solid var(--border-color);">${job.type.replace('-', ' ')}</span>
+              </div>
+              <p style="margin-bottom: 1.5rem; color: var(--text-muted); font-size: 0.9rem; flex-grow: 1;">
+                ${job.description.length > 100 ? job.description.substring(0, 100) + '...' : job.description}
+              </p>
+            </div>
+          `;
+        });
+        grid.innerHTML = html;
+      } catch (error) {
+        document.getElementById('savedJobsGrid').innerHTML = '<p class="text-danger">Failed to load saved jobs.</p>';
+      }
+    });
+
+    window.removeSavedJob = async (id) => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/saved-jobs/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (res.ok) {
+          showToast('Job removed from saved list');
+          window.location.reload();
+        }
+      } catch (error) {
+        showToast('Failed to remove job', 'error');
+      }
+    };
+  </script>
+</body>
+</html>

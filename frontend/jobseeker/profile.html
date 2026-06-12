@@ -53,8 +53,12 @@
           
           <div class="grid grid-2">
             <div class="form-group mb-2">
-              <label for="resume">Resume Link</label>
-              <input type="url" id="resume" class="form-control" placeholder="https://link-to-your-resume.com">
+              <label>Upload Resume (PDF/DOCX)</label>
+              <div class="flex gap-1">
+                <input type="file" id="resumeFile" class="form-control" accept=".pdf,.docx">
+                <button type="button" id="uploadResumeBtn" class="btn btn-outline">Upload</button>
+              </div>
+              <div id="resumeStatus" class="mt-1"></div>
             </div>
             <div class="form-group mb-2">
               <label for="portfolio">Portfolio URL (Optional)</label>
@@ -90,14 +94,75 @@
         if (data.profile) {
           document.getElementById('bio').value = data.profile.bio || '';
           document.getElementById('skills').value = data.profile.skills ? data.profile.skills.join(', ') : '';
-          document.getElementById('resume').value = data.profile.resume || '';
           document.getElementById('portfolio').value = data.profile.portfolio || '';
           document.getElementById('linkedin').value = data.profile.linkedin || '';
+        }
+
+        if (data.resumeUrl) {
+          document.getElementById('resumeStatus').innerHTML = `
+            <a href="${data.resumeUrl}" target="_blank" class="btn btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">View Current Resume</a>
+            <button type="button" onclick="removeResume()" class="btn btn-danger" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">Delete</button>
+          `;
         }
       } catch (error) {
         showToast('Failed to load profile data', 'error');
       }
     });
+
+    // Upload Resume Logic
+    document.getElementById('uploadResumeBtn').addEventListener('click', async () => {
+      const fileInput = document.getElementById('resumeFile');
+      if (!fileInput.files[0]) {
+        return showToast('Please select a file first', 'error');
+      }
+
+      const formData = new FormData();
+      formData.append('resume', fileInput.files[0]);
+
+      try {
+        const btn = document.getElementById('uploadResumeBtn');
+        const originalText = btn.innerText;
+        btn.innerText = 'Uploading...';
+        btn.disabled = true;
+
+        const res = await fetch('http://localhost:5000/api/profile/upload-resume', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: formData
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+
+        showToast('Resume uploaded successfully!');
+        window.location.reload();
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    });
+
+    window.removeResume = async () => {
+      if (confirm('Are you sure you want to delete your resume?')) {
+        try {
+          const res = await fetch('http://localhost:5000/api/profile/remove-resume', {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message);
+
+          showToast('Resume deleted successfully!');
+          document.getElementById('resumeStatus').innerHTML = '';
+        } catch (error) {
+          showToast(error.message, 'error');
+        }
+      }
+    };
 
     document.getElementById('profileForm').addEventListener('submit', async (e) => {
       e.preventDefault();

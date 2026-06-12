@@ -35,8 +35,11 @@
               <input type="text" id="title" class="form-control" required placeholder="e.g. Senior Frontend Developer">
             </div>
             <div class="form-group">
-              <label for="company">Company Name *</label>
-              <input type="text" id="company" class="form-control" required placeholder="e.g. TechCorp Inc.">
+              <label for="companyId">Company *</label>
+              <select id="companyId" class="form-control" required>
+                <option value="">Select a company</option>
+              </select>
+              <small class="text-muted"><a href="dashboard.html">Create a company first</a> if list is empty.</small>
             </div>
           </div>
           
@@ -80,9 +83,26 @@
   <script src="../js/auth.js"></script>
   <script src="../js/jobs.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       const user = JSON.parse(localStorage.getItem('user'));
       if (user) document.getElementById('userName').innerText = user.name;
+
+      // Fetch companies
+      try {
+        const response = await fetch('http://localhost:5000/api/company/my', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const companies = await response.json();
+        const select = document.getElementById('companyId');
+        companies.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c._id;
+          opt.textContent = c.name;
+          select.appendChild(opt);
+        });
+      } catch (err) {
+        showToast('Failed to load companies', 'error');
+      }
     });
 
     document.getElementById('postJobForm').addEventListener('submit', async (e) => {
@@ -97,7 +117,7 @@
 
         const jobData = {
           title: document.getElementById('title').value,
-          company: document.getElementById('company').value,
+          companyId: document.getElementById('companyId').value,
           location: document.getElementById('location').value,
           type: document.getElementById('type').value,
           salary: document.getElementById('salary').value,

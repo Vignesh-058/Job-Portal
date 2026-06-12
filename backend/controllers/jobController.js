@@ -1,12 +1,54 @@
 const Job = require('../models/Job');
+const Company = require('../models/Company');
 
-// @desc    Get all active jobs
+// @desc    Get all active jobs with advanced search and pagination
 // @route   GET /api/jobs
 // @access  Public
 const getJobs = async (req, res) => {
   try {
-    const jobs = await Job.find({ isActive: true }).sort({ createdAt: -1 });
-    res.status(200).json(jobs);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const query = { status: 'Active' };
+
+    if (req.query.title) {
+      query.title = { $regex: req.query.title, $options: 'i' };
+    }
+    if (req.query.location) {
+      query.location = { $regex: req.query.location, $options: 'i' };
+    }
+    if (req.query.jobType) {
+      query.type = req.query.jobType;
+    }
+    if (req.query.remote === 'true') {
+      query.type = 'remote';
+    }
+    if (req.query.salaryRange) {
+      // Basic salary parsing if implemented
+      query.salary = { $regex: req.query.salaryRange, $options: 'i' };
+    }
+
+    // Company filter requires finding company IDs first
+    if (req.query.company) {
+      const companies = await Company.find({ name: { $regex: req.query.company, $options: 'i' } });
+      const companyIds = companies.map(c => c._id);
+      query.companyId = { $in: companyIds };
+    }
+
+    const totalRecords = await Job.countDocuments(query);
+    const jobs = await Job.find(query)
+      .populate('companyId')
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      totalRecords,
+      totalPages: Math.ceil(totalRecords / limit),
+      currentPage: page,
+      data: jobs
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -17,7 +59,9 @@ const getJobs = async (req, res) => {
 // @access  Public
 const getJobById = async (req, res) => {
   try {
-    const job = await Job.findById(req.params.id).populate('recruiterId', 'name email company');
+    const job = await Job.findById(req.params.id)
+      .populate('recruiterId', 'name email')
+      .populate('companyId');
     
     if (!job) {
       return res.status(404).json({ message: 'Job not found' });
@@ -34,16 +78,17 @@ const getJobById = async (req, res) => {
 // @access  Private/Recruiter
 const createJob = async (req, res) => {
   try {
-    const { title, company, location, salary, description, requirements, type } = req.body;
+    const { title, companyId, location, salary, description, requirements, type, status } = req.body;
 
     const job = new Job({
       title,
-      company,
+      companyId,
       location,
       salary,
       description,
       requirements,
       type,
+      status: status || 'Active',
       recruiterId: req.user._id
     });
 
@@ -65,7 +110,6 @@ const updateJob = async (req, res) => {
       return res.status(404).json({ message: 'Job not found' });
     }
 
-    // Check if user is the owner
     if (job.recruiterId.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: 'Not authorized to update this job' });
     }
@@ -74,7 +118,7 @@ const updateJob = async (req, res) => {
       req.params.id,
       req.body,
       { new: true }
-    );
+    ).populate('companyId');
 
     res.status(200).json(updatedJob);
   } catch (error) {
@@ -93,12 +137,11 @@ const deleteJob = async (req, res) => {
       return res.status(404).json({ message: 'Job not found' });
     }
 
-    // Check if user is the owner
     if (job.recruiterId.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: 'Not authorized to delete this job' });
     }
 
-    await Job.deleteOne({ _id: req.params.id });
+    await job.remove();
 
     res.status(200).json({ message: 'Job removed' });
   } catch (error) {
@@ -106,13 +149,30 @@ const deleteJob = async (req, res) => {
   }
 };
 
-// @desc    Get recruiter's jobs
+// @desc    Get recruiter's jobs with pagination
 // @route   GET /api/jobs/my-jobs
 // @access  Private/Recruiter
 const getMyJobs = async (req, res) => {
   try {
-    const jobs = await Job.find({ recruiterId: req.user._id }).sort({ createdAt: -1 });
-    res.status(200).json(jobs);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const query = { recruiterId: req.user._id };
+    
+    const totalRecords = await Job.countDocuments(query);
+    const jobs = await Job.find(query)
+      .populate('companyId')
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      totalRecords,
+      totalPages: Math.ceil(totalRecords / limit),
+      currentPage: page,
+      data: jobs
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

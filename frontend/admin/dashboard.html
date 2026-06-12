@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - JobPortal</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <div class="nav-brand">JobPortal Admin</div>
+      <div class="nav-links">
+        <button id="themeToggle" class="btn btn-outline" style="padding: 0.5rem; border-radius: 50%;">🌙</button>
+        <button id="logoutBtn" class="btn btn-danger">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <a href="#" class="active" id="nav-stats">Dashboard Stats</a>
+      <a href="#" id="nav-users">Manage Users</a>
+      <a href="#" id="nav-jobs">Manage Jobs</a>
+    </aside>
+
+    <main class="main-content">
+      <div id="stats-section">
+        <h2 class="mb-2">Platform Statistics</h2>
+        <div class="grid grid-2">
+          <div class="card text-center">
+            <h3 class="text-muted">Total Seekers</h3>
+            <h1 id="stat-seekers" style="font-size: 3rem; color: var(--primary);">0</h1>
+          </div>
+          <div class="card text-center">
+            <h3 class="text-muted">Total Recruiters</h3>
+            <h1 id="stat-recruiters" style="font-size: 3rem; color: var(--accent);">0</h1>
+          </div>
+          <div class="card text-center">
+            <h3 class="text-muted">Total Jobs</h3>
+            <h1 id="stat-jobs" style="font-size: 3rem; color: var(--primary);">0</h1>
+          </div>
+          <div class="card text-center">
+            <h3 class="text-muted">Total Applications</h3>
+            <h1 id="stat-apps" style="font-size: 3rem; color: var(--accent);">0</h1>
+          </div>
+        </div>
+      </div>
+
+      <div id="users-section" style="display: none;">
+        <h2 class="mb-2">Manage Users</h2>
+        <div class="card" style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-table-body">
+              <tr><td colspan="5" class="text-center text-muted">Loading users...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="jobs-section" style="display: none;">
+        <h2 class="mb-2">Manage Jobs (Fraud Prevention)</h2>
+        <div class="card" style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Company</th>
+                <th>Recruiter</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="jobs-table-body">
+              <tr><td colspan="5" class="text-center text-muted">Loading jobs...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/auth.js"></script>
+  <script src="../js/admin.js"></script>
+  <script>
+    const themeToggle = document.getElementById('themeToggle');
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    if (currentTheme === 'dark') {
+      document.body.setAttribute('data-theme', 'dark');
+      themeToggle.textContent = '☀️';
+    }
+    themeToggle.addEventListener('click', () => {
+      let theme = document.body.getAttribute('data-theme');
+      if (theme === 'dark') {
+        document.body.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'light');
+        themeToggle.textContent = '🌙';
+      } else {
+        document.body.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+        themeToggle.textContent = '☀️';
+      }
+    });
+  </script>
+</body>
+</html>

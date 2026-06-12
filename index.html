@@ -11,6 +11,7 @@
     <div class="container">
       <div class="nav-brand">JobPortal</div>
       <div class="nav-links">
+        <button id="themeToggle" class="btn btn-outline" style="padding: 0.5rem; border-radius: 50%;">🌙</button>
         <a href="./frontend/login.html" class="btn btn-outline">Login</a>
         <a href="./frontend/register.html" class="btn btn-primary">Register</a>
       </div>
@@ -41,10 +42,37 @@
       </div>
     </section>
   </main>
+  <footer style="text-align: center; padding: 2rem; background: var(--card-bg); border-top: 1px solid var(--border-color); margin-top: auto;">
+    <p style="margin-top: 1rem; color: var(--text-muted);">© 2023 JobPortal. All rights reserved.</p>
+  </footer>
 
   <script src="./frontend/js/auth.js"></script>
-  <script src="./frontend/js/jobs.js"></script>
+
   <script>
+    // Theme Toggle Logic
+    const themeToggle = document.getElementById('themeToggle');
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    
+    if (currentTheme === 'dark') {
+      document.body.setAttribute('data-theme', 'dark');
+      if (themeToggle) themeToggle.textContent = '☀️';
+    }
+
+    if (themeToggle) {
+      themeToggle.addEventListener('click', () => {
+        let theme = document.body.getAttribute('data-theme');
+        if (theme === 'dark') {
+          document.body.removeAttribute('data-theme');
+          localStorage.setItem('theme', 'light');
+          themeToggle.textContent = '🌙';
+        } else {
+          document.body.setAttribute('data-theme', 'dark');
+          localStorage.setItem('theme', 'dark');
+          themeToggle.textContent = '☀️';
+        }
+      });
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
       const jobsContainer = document.getElementById('featured-jobs');
       try {

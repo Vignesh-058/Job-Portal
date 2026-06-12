@@ -68,11 +68,23 @@ const getJobApplicants = async (req, res) => {
       return res.status(401).json({ message: 'Not authorized to view applicants for this job' });
     }
 
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const totalRecords = await Application.countDocuments({ jobId: req.params.jobId });
     const applications = await Application.find({ jobId: req.params.jobId })
-      .populate('userId', 'name email profile')
+      .populate('userId', 'name email profile resumeUrl resumePublicId')
+      .skip(skip)
+      .limit(limit)
       .sort({ appliedAt: -1 });
       
-    res.status(200).json(applications);
+    res.status(200).json({
+      totalRecords,
+      totalPages: Math.ceil(totalRecords / limit),
+      currentPage: page,
+      data: applications
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

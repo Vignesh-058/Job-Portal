@@ -30,6 +30,20 @@
   --shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
+[data-theme="dark"] {
+  --bg-color: #0F172A;
+  --text-main: #F8FAFC;
+  --text-muted: #94A3B8;
+  --card-bg: rgba(30, 41, 59, 0.9);
+  --border-color: #334155;
+  --badge-pending-bg: rgba(245, 158, 11, 0.2);
+  --badge-pending-text: #FCD34D;
+  --badge-shortlisted-bg: rgba(16, 185, 129, 0.2);
+  --badge-shortlisted-text: #6EE7B7;
+  --badge-rejected-bg: rgba(239, 68, 68, 0.2);
+  --badge-rejected-text: #FCA5A5;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -71,10 +85,10 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Navbar (Glassmorphism) */
 .navbar {
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--card-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  border-bottom: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
   padding: 1.25rem 0;
   position: sticky;
@@ -198,7 +212,8 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: var(--btn-radius);
   font-size: 1rem;
   transition: var(--transition);
-  background-color: white;
+  background-color: var(--bg-color);
+  color: var(--text-main);
 }
 
 .form-control:focus {

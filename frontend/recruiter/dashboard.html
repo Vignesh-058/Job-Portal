@@ -19,9 +19,11 @@
 
   <div class="dashboard-layout">
     <aside class="sidebar">
-      <a href="./dashboard.html" class="active">Dashboard</a>
-      <a href="./post-job.html">Post a Job</a>
-      <a href="./manage-jobs.html">Manage Jobs</a>
+      <a href="dashboard.html" class="active">Dashboard Stats</a>
+      <a href="#" id="nav-companies">Manage Companies</a>
+      <a href="post-job.html">Post a New Job</a>
+      <a href="manage-jobs.html">Manage Jobs</a>
+      <a href="view-applicants.html">View Applicants</a>
     </aside>
 
     <main class="main-content">
@@ -44,10 +46,42 @@
           <p class="text-muted">Loading...</p>
         </div>
       </div>
+
+      <!-- Manage Companies Section (Hidden by default) -->
+      <div id="companies-section" style="display: none; margin-top: 2rem;">
+        <div class="flex justify-between align-center mb-2">
+          <h2>My Companies</h2>
+          <button id="showCompanyFormBtn" class="btn btn-primary">Add New Company</button>
+        </div>
+
+        <div id="companyFormContainer" class="card mb-2" style="display: none;">
+          <h3 class="mb-1">Create Company</h3>
+          <form id="companyForm">
+            <div class="form-group">
+              <label>Company Name</label>
+              <input type="text" id="companyName" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>Website URL</label>
+              <input type="url" id="companyWebsite" class="form-control">
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea id="companyDescription" class="form-control" rows="3"></textarea>
+            </div>
+            <button type="submit" class="btn btn-accent">Save Company</button>
+          </form>
+        </div>
+
+        <div class="grid grid-2" id="companiesList">
+          <!-- Companies will be injected here -->
+        </div>
+      </div>
     </main>
   </div>
 
   <script src="../js/auth.js"></script>
+  <script src="../js/company.js"></script>
   <script src="../js/jobs.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {

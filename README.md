@@ -1,146 +1,90 @@
-# Full Stack Role-Based Job Portal
+# Complete Full Stack Role-Based Job Portal
 
-![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=nodedotjs&logoColor=white)
-![Express](https://img.shields.io/badge/Express.js-000000?style=flat&logo=express&logoColor=white)
-![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)
-![JWT](https://img.shields.io/badge/JWT-000000?style=flat&logo=jsonwebtokens&logoColor=white)
+A production-ready Full Stack Role-Based Job Portal application.
 
-A complete, production-ready full-stack web application that allows Job Seekers to find and apply for jobs, and Recruiters to post and manage listings.
+## 🚀 Features
 
-## Features
+### General
+* **JWT Authentication** (Access tokens, Password Hashing)
+* **Dark Mode & Modern UI** (CSS Variables, Glassmorphism)
+* **Robust Security** (Helmet, Rate Limiting, XSS Protection, NoSQL Injection Protection)
+* **Centralized Error Handling & Request Validation**
 
-**Job Seeker:**
-- Register & Login
-- Search for jobs by title, company, location, and type
-- Apply to jobs with a cover letter
-- View applied jobs and track application status
-- Manage profile information (bio, skills, resume)
+### Job Seeker Role
+* Register, Login, Logout
+* Build Profile & Upload Resume (Multer + Cloudinary)
+* Search Jobs with Advanced Filtering & Pagination
+* Apply for Jobs
+* Save Jobs for later
+* View Notifications
+* View Applied Jobs & Application Status
 
-**Recruiter:**
-- Register & Login
-- Post new job listings
-- Manage (Edit/Close/Delete) own job listings
-- View applicants for each job
-- Update applicant status (Pending, Reviewed, Shortlisted, Rejected)
+### Recruiter Role
+* Register, Login, Logout
+* Manage Companies (Create, Edit, Upload Logo)
+* Post Jobs (Linked to Companies)
+* Manage Posted Jobs (Status: Active, Closed, Draft)
+* View Applicants & Change Application Status (Pending, Shortlisted, Rejected)
 
-## Tech Stack
-- **Frontend:** HTML5, CSS3 (Vanilla), Vanilla JavaScript (ES6+), Fetch API
-- **Backend:** Node.js, Express.js
-- **Database:** MongoDB, Mongoose
-- **Authentication:** JWT (JSON Web Tokens), bcryptjs
+### Admin Role
+* View Dashboard Statistics
+* Manage Users (Block/Unblock Fraudulent Users)
+* Manage Jobs (Delete Fraudulent Jobs)
 
-## Folder Structure
+## 🛠️ Technology Stack
 
-```text
-job-portal/
-├── backend/
-│   ├── config/
-│   │   └── db.js                  # MongoDB connection
-│   ├── models/
-│   │   ├── User.js                # User schema
-│   │   ├── Job.js                 # Job schema
-│   │   └── Application.js         # Application schema
-│   ├── routes/
-│   │   ├── auth.js                # Register & Login
-│   │   ├── jobs.js                # Job CRUD
-│   │   └── applications.js        # Apply & track
-│   ├── middleware/
-│   │   └── authMiddleware.js      # JWT verification + role guard
-│   ├── controllers/
-│   │   ├── authController.js
-│   │   ├── jobController.js
-│   │   └── applicationController.js
-│   ├── server.js                  # Express app entry point
-│   ├── package.json
-│   └── .env                       # Environment Variables
-│
-├── frontend/
-│   ├── index.html                 # Landing page
-│   ├── login.html
-│   ├── register.html
-│   ├── jobseeker/
-│   │   ├── dashboard.html
-│   │   ├── search-jobs.html
-│   │   ├── applied-jobs.html
-│   │   └── profile.html
-│   ├── recruiter/
-│   │   ├── dashboard.html
-│   │   ├── post-job.html
-│   │   ├── manage-jobs.html
-│   │   └── view-applicants.html
-│   ├── css/
-│   │   └── style.css
-│   └── js/
-│       ├── auth.js
-│       ├── jobs.js
-│       └── applications.js
-│
-└── README.md
-```
+* **Frontend**: HTML5, CSS3, Vanilla JavaScript (ES6+)
+* **Backend**: Node.js, Express.js
+* **Database**: MongoDB, Mongoose
+* **Uploads**: Multer, Cloudinary
 
-## Installation Guide
+## ⚙️ Setup & Installation
 
 ### Prerequisites
-- Node.js installed on your local machine
-- MongoDB installed locally or a MongoDB Atlas connection string
+* Node.js
+* MongoDB Server (Running locally or MongoDB Atlas)
+* Cloudinary Account
 
-### Steps
+### 1. Clone the repository
+```bash
+git clone <repository_url>
+cd <repository_folder>
+```
 
-1. **Clone the repository (or navigate to the directory):**
-   ```bash
-   cd "Role-Based job portal"
-   ```
+### 2. Install dependencies
+```bash
+cd backend
+npm install
+```
 
-2. **Backend Setup:**
-   ```bash
-   cd backend
-   npm install
-   ```
+### 3. Environment Variables
+Create a `.env` file in the `backend` folder and add:
+```env
+PORT=5000
+MONGODB_URI=mongodb://127.0.0.1:27017/job-portal
+JWT_SECRET=your_super_secret_jwt_key
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+```
 
-3. **Environment Variables:**
-   Ensure your `backend/.env` file has the following sample content:
-   ```env
-   PORT=5000
-   MONGO_URI=mongodb://localhost:27017/job-portal
-   JWT_SECRET=super_secret_jwt_key_12345
-   JWT_EXPIRES_IN=7d
-   ```
+### 4. Run the application
+Start the backend server:
+```bash
+cd backend
+npm run dev
+```
 
-4. **Start the Backend Server:**
-   ```bash
-   # Make sure you are in the backend directory
-   npm run dev
-   ```
+Open `index.html` in your browser (Preferably using a live server like VSCode Live Server).
 
-5. **Start the Frontend:**
-   You can serve the frontend directory using any static server. For example:
-   - Use the VS Code Live Server extension on `index.html`.
-   - Or, run `npx serve .` in the root `Role-Based job portal` folder.
-   - Navigate to `http://localhost:<port>` (usually 3000 or 5500).
+## 📄 API Documentation
+See `API_DOCS.md` for complete API references.
 
-## API Endpoints
-
-### Auth APIs (`/api/auth`)
-- `POST /register`: Register user
-- `POST /login`: Authenticate user & get token
-- `GET /profile`: Get logged in user profile
-
-### Job APIs (`/api/jobs`)
-- `GET /`: Get all active jobs (Public)
-- `GET /:id`: Get single job by ID (Public)
-- `GET /my-jobs`: Get recruiter's posted jobs (Private/Recruiter)
-- `POST /`: Create a job (Private/Recruiter)
-- `PUT /:id`: Update a job (Private/Recruiter)
-- `DELETE /:id`: Delete a job (Private/Recruiter)
-
-### Application APIs (`/api/applications`)
-- `POST /apply/:jobId`: Apply for a job (Private/JobSeeker)
-- `GET /my-applications`: Get user's applications (Private/JobSeeker)
-- `GET /job/:jobId`: Get applicants for a job (Private/Recruiter)
-- `PATCH /:id/status`: Update application status (Private/Recruiter)
-
-## Postman Collection
-To test these APIs via Postman:
-1. Set the Base URL to `http://localhost:5000/api`.
-2. For private routes, set the `Authorization` header to `Bearer <your_token>`.
-3. Use `application/json` for the `Content-Type` header on POST/PUT/PATCH requests.
+## 🔒 Security Best Practices Implemented
+* Passwords hashed using bcrypt.
+* JWT used for session management.
+* Input validation via `express-validator`.
+* Security headers managed by `helmet`.
+* API rate limiting via `express-rate-limit`.
+* NoSQL injection prevention via `express-mongo-sanitize`.
+* XSS protection via `xss-clean`.
