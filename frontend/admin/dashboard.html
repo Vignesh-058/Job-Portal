@@ -22,6 +22,7 @@
       <a href="#" class="active" id="nav-stats">Dashboard Stats</a>
       <a href="#" id="nav-users">Manage Users</a>
       <a href="#" id="nav-jobs">Manage Jobs</a>
+      <a href="#" id="nav-audit">Audit Logs</a>
     </aside>
 
     <main class="main-content">
@@ -86,12 +87,120 @@
           </table>
         </div>
       </div>
+
+      <div id="audit-section" style="display: none;">
+        <h2 class="mb-2">Audit Logs</h2>
+        
+        <div class="card mb-2" style="background: var(--bg-color);">
+          <h3 class="mb-1">Restore Resource</h3>
+          <div class="flex gap-1">
+            <select id="restoreType" class="form-control" style="width: auto;">
+              <option value="User">User</option>
+              <option value="Job">Job</option>
+              <option value="Company">Company</option>
+            </select>
+            <input type="text" id="restoreId" class="form-control" placeholder="Resource ID">
+            <button onclick="restoreResource()" class="btn btn-primary">Restore</button>
+          </div>
+        </div>
+
+        <div class="card" style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Role</th>
+                <th>Action</th>
+                <th>Resource Type</th>
+                <th>Resource ID</th>
+              </tr>
+            </thead>
+            <tbody id="audit-table-body">
+              <tr><td colspan="6" class="text-center text-muted">Loading logs...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </main>
   </div>
 
   <script src="../js/auth.js"></script>
   <script src="../js/admin.js"></script>
   <script>
+    // Navigation logic for Audit Logs
+    document.getElementById('nav-audit').addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+      e.target.classList.add('active');
+      
+      document.getElementById('stats-section').style.display = 'none';
+      document.getElementById('users-section').style.display = 'none';
+      document.getElementById('jobs-section').style.display = 'none';
+      document.getElementById('audit-section').style.display = 'block';
+      
+      loadAuditLogs();
+    });
+
+    async function loadAuditLogs() {
+      try {
+        const res = await fetch('http://localhost:5000/api/admin/audit-logs', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const data = await res.json();
+        
+        const tbody = document.getElementById('audit-table-body');
+        if (!data.data || data.data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No audit logs found.</td></tr>';
+          return;
+        }
+
+        let html = '';
+        data.data.forEach(log => {
+          html += `
+            <tr>
+              <td>${new Date(log.createdAt).toLocaleString()}</td>
+              <td>${log.userId ? log.userId.name : 'System'}</td>
+              <td><span class="badge" style="background: var(--border-color); color: var(--text-main);">${log.role}</span></td>
+              <td style="font-weight: 500;">${log.action}</td>
+              <td>${log.resourceType}</td>
+              <td class="text-muted" style="font-size: 0.8rem;">${log.resourceId || '-'}</td>
+            </tr>
+          `;
+        });
+        tbody.innerHTML = html;
+      } catch (error) {
+        showToast('Failed to load audit logs', 'error');
+      }
+    }
+
+    window.restoreResource = async () => {
+      const type = document.getElementById('restoreType').value;
+      const id = document.getElementById('restoreId').value;
+      if (!id) return showToast('Please enter a resource ID', 'error');
+
+      try {
+        const res = await fetch(`http://localhost:5000/api/admin/restore/${id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ resourceType: type })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(data.message);
+          document.getElementById('restoreId').value = '';
+          loadAuditLogs();
+        } else {
+          throw new Error(data.message);
+        }
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    };
+
     const themeToggle = document.getElementById('themeToggle');
     const currentTheme = localStorage.getItem('theme') || 'light';
     if (currentTheme === 'dark') {

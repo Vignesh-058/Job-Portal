@@ -1,24 +1,31 @@
 const express = require('express');
 const router = express.Router();
-const { protect, recruiterOnly } = require('../middleware/authMiddleware');
-const { companyValidation } = require('../middleware/validationMiddleware');
 const {
   createCompany,
   getMyCompanies,
   updateCompany,
   deleteCompany,
-  uploadLogo
+  uploadLogo,
+  followCompany,
+  unfollowCompany,
+  getFollowedCompanies,
+  getCompanyFollowersCount
 } = require('../controllers/companyController');
-const { upload } = require('../config/cloudinary');
+const { protect, recruiterOnly } = require('../middleware/authMiddleware');
+const { companyValidation } = require('../middleware/validationMiddleware');
+const upload = require('../config/cloudinary');
 
-router.use(protect, recruiterOnly);
+// Basic Recruiter routes
+router.post('/', protect, recruiterOnly, companyValidation, createCompany);
+router.get('/my', protect, recruiterOnly, getMyCompanies);
+router.put('/:id', protect, recruiterOnly, companyValidation, updateCompany);
+router.delete('/:id', protect, recruiterOnly, deleteCompany);
+router.post('/:id/upload-logo', protect, recruiterOnly, upload.single('logo'), uploadLogo);
 
-router.post('/', companyValidation, createCompany);
-router.get('/my', getMyCompanies);
-router.put('/:id', companyValidation, updateCompany);
-router.delete('/:id', deleteCompany);
-
-// Logo upload route
-router.post('/:id/upload-logo', upload.single('logo'), uploadLogo);
+// Follower feature routes
+router.post('/:id/follow', protect, followCompany);
+router.delete('/:id/unfollow', protect, unfollowCompany);
+router.get('/followed', protect, getFollowedCompanies);
+router.get('/:id/followers/count', getCompanyFollowersCount);
 
 module.exports = router;

@@ -1,20 +1,22 @@
 const express = require('express');
 const router = express.Router();
-const { protect, adminOnly } = require('../middleware/authMiddleware');
 const {
-  getStats,
+  getDashboardStats,
   getAllUsers,
-  getAllJobs,
   toggleBlockUser,
-  deleteJob
+  hardDeleteJob,
+  getAuditLogs,
+  restoreResource
 } = require('../controllers/adminController');
+const { protect, adminOnly } = require('../middleware/authMiddleware');
 
 router.use(protect, adminOnly);
 
-router.get('/stats', getStats);
+router.get('/stats', getDashboardStats);
 router.get('/users', getAllUsers);
-router.get('/jobs', getAllJobs);
 router.patch('/users/:id/block', toggleBlockUser);
-router.delete('/jobs/:id', deleteJob);
+router.delete('/jobs/:id', hardDeleteJob);
+router.get('/audit-logs', getAuditLogs);
+router.patch('/restore/:id', restoreResource);
 
 module.exports = router;

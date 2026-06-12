@@ -1,118 +1,57 @@
-const Application = require('../models/Application');
-const Job = require('../models/Job');
+const ApplicationService = require('../services/ApplicationService');
+const AuditLog = require('../models/AuditLog');
 
-// @desc    Apply for a job
-// @route   POST /api/applications/apply/:jobId
-// @access  Private/JobSeeker
 const applyForJob = async (req, res) => {
   try {
-    const { coverLetter } = req.body;
-    const jobId = req.params.jobId;
+    const result = await ApplicationService.applyForJob(req.params.jobId, req.user._id, req.body.coverLetter);
 
-    // Check if job exists
-    const job = await Job.findById(jobId);
-    if (!job) {
-      return res.status(404).json({ message: 'Job not found' });
-    }
-
-    // Check if already applied
-    const existingApplication = await Application.findOne({
-      jobId,
-      userId: req.user._id
-    });
-
-    if (existingApplication) {
-      return res.status(400).json({ message: 'You have already applied for this job' });
-    }
-
-    const application = new Application({
+    await AuditLog.create({
       userId: req.user._id,
-      jobId,
-      coverLetter
+      role: req.user.role,
+      action: 'Apply Job',
+      resourceType: 'Application',
+      resourceId: result._id
     });
 
-    await application.save();
-
-    res.status(201).json({ message: 'Application submitted successfully', application });
+    res.status(201).json({ message: 'Application submitted successfully', application: result });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
-// @desc    Get user's applied jobs
-// @route   GET /api/applications/my-applications
-// @access  Private/JobSeeker
 const getMyApplications = async (req, res) => {
   try {
-    const applications = await Application.find({ userId: req.user._id })
-      .populate('jobId')
-      .sort({ appliedAt: -1 });
-    res.status(200).json(applications);
+    const result = await ApplicationService.getMyApplications(req.user._id);
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Get applicants for a job
-// @route   GET /api/applications/job/:jobId
-// @access  Private/Recruiter
 const getJobApplicants = async (req, res) => {
   try {
-    // Verify job belongs to recruiter
-    const job = await Job.findById(req.params.jobId);
-    if (!job) {
-      return res.status(404).json({ message: 'Job not found' });
-    }
-
-    if (job.recruiterId.toString() !== req.user._id.toString()) {
-      return res.status(401).json({ message: 'Not authorized to view applicants for this job' });
-    }
-
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-
-    const totalRecords = await Application.countDocuments({ jobId: req.params.jobId });
-    const applications = await Application.find({ jobId: req.params.jobId })
-      .populate('userId', 'name email profile resumeUrl resumePublicId')
-      .skip(skip)
-      .limit(limit)
-      .sort({ appliedAt: -1 });
-      
-    res.status(200).json({
-      totalRecords,
-      totalPages: Math.ceil(totalRecords / limit),
-      currentPage: page,
-      data: applications
-    });
+    const result = await ApplicationService.getJobApplicants(req.params.jobId, req.user._id, req.query);
+    res.status(200).json(result);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(401).json({ message: error.message });
   }
 };
 
-// @desc    Update application status
-// @route   PATCH /api/applications/:id/status
-// @access  Private/Recruiter
 const updateApplicationStatus = async (req, res) => {
   try {
-    const { status } = req.body;
-    const application = await Application.findById(req.params.id).populate('jobId');
+    const result = await ApplicationService.updateApplicationStatus(req.params.id, req.user._id, req.body.status);
 
-    if (!application) {
-      return res.status(404).json({ message: 'Application not found' });
-    }
+    await AuditLog.create({
+      userId: req.user._id,
+      role: req.user.role,
+      action: `Update Application Status to ${req.body.status}`,
+      resourceType: 'Application',
+      resourceId: result._id
+    });
 
-    // Verify job belongs to recruiter
-    if (application.jobId.recruiterId.toString() !== req.user._id.toString()) {
-      return res.status(401).json({ message: 'Not authorized to update this application' });
-    }
-
-    application.status = status;
-    await application.save();
-
-    res.status(200).json(application);
+    res.status(200).json(result);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 

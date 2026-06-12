@@ -1,102 +1,114 @@
-const Company = require('../models/Company');
-const { cloudinary } = require('../config/cloudinary');
+const CompanyService = require('../services/CompanyService');
+const AuditLog = require('../models/AuditLog');
 
-// @desc    Create a new company
-// @route   POST /api/company
-// @access  Private/Recruiter
 const createCompany = async (req, res) => {
   try {
-    const { name, website, description } = req.body;
-    
-    const company = new Company({
-      name,
-      website,
-      description,
-      recruiterId: req.user._id
+    const result = await CompanyService.createCompany(req.body, req.user._id);
+
+    await AuditLog.create({
+      userId: req.user._id,
+      role: req.user.role,
+      action: 'Create Company',
+      resourceType: 'Company',
+      resourceId: result._id
     });
 
-    const savedCompany = await company.save();
-    res.status(201).json(savedCompany);
+    res.status(201).json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Get recruiter's companies
-// @route   GET /api/company/my
-// @access  Private/Recruiter
 const getMyCompanies = async (req, res) => {
   try {
-    const companies = await Company.find({ recruiterId: req.user._id });
-    res.json(companies);
+    const result = await CompanyService.getMyCompanies(req.user._id);
+    res.json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Update company
-// @route   PUT /api/company/:id
-// @access  Private/Recruiter
 const updateCompany = async (req, res) => {
   try {
-    const { name, website, description } = req.body;
-    const company = await Company.findOne({ _id: req.params.id, recruiterId: req.user._id });
+    const result = await CompanyService.updateCompany(req.params.id, req.body, req.user._id);
 
-    if (!company) {
-      return res.status(404).json({ message: 'Company not found or unauthorized' });
-    }
+    await AuditLog.create({
+      userId: req.user._id,
+      role: req.user.role,
+      action: 'Update Company',
+      resourceType: 'Company',
+      resourceId: result._id
+    });
 
-    company.name = name || company.name;
-    company.website = website || company.website;
-    company.description = description || company.description;
-
-    const updatedCompany = await company.save();
-    res.json(updatedCompany);
+    res.json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Delete company
-// @route   DELETE /api/company/:id
-// @access  Private/Recruiter
 const deleteCompany = async (req, res) => {
   try {
-    const company = await Company.findOne({ _id: req.params.id, recruiterId: req.user._id });
+    const result = await CompanyService.deleteCompany(req.params.id, req.user._id);
 
-    if (!company) {
-      return res.status(404).json({ message: 'Company not found or unauthorized' });
-    }
+    await AuditLog.create({
+      userId: req.user._id,
+      role: req.user.role,
+      action: 'Soft Delete Company',
+      resourceType: 'Company',
+      resourceId: req.params.id
+    });
 
-    await company.remove();
-    res.json({ message: 'Company removed successfully' });
+    res.json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Upload company logo
-// @route   POST /api/company/:id/upload-logo
-// @access  Private/Recruiter
 const uploadLogo = async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'Please upload a file' });
-    }
+    if (!req.file) return res.status(400).json({ message: 'Please upload a file' });
 
-    const company = await Company.findOne({ _id: req.params.id, recruiterId: req.user._id });
+    const result = await CompanyService.uploadLogo(req.params.id, req.file.path, req.user._id);
 
-    if (!company) {
-      return res.status(404).json({ message: 'Company not found or unauthorized' });
-    }
+    res.json({ message: 'Logo uploaded successfully', logo: result.logo });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
-    company.logo = req.file.path;
-    await company.save();
+const CompanyFollowerService = require('../services/CompanyFollowerService');
 
-    res.json({
-      message: 'Logo uploaded successfully',
-      logo: company.logo
-    });
+const followCompany = async (req, res) => {
+  try {
+    const result = await CompanyFollowerService.followCompany(req.user._id, req.params.id);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+const unfollowCompany = async (req, res) => {
+  try {
+    const result = await CompanyFollowerService.unfollowCompany(req.user._id, req.params.id);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+const getFollowedCompanies = async (req, res) => {
+  try {
+    const result = await CompanyFollowerService.getFollowedCompanies(req.user._id);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getCompanyFollowersCount = async (req, res) => {
+  try {
+    const count = await CompanyFollowerService.getCompanyFollowersCount(req.params.id);
+    res.status(200).json({ count });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -107,5 +119,9 @@ module.exports = {
   getMyCompanies,
   updateCompany,
   deleteCompany,
-  uploadLogo
+  uploadLogo,
+  followCompany,
+  unfollowCompany,
+  getFollowedCompanies,
+  getCompanyFollowersCount
 };

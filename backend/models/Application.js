@@ -22,7 +22,12 @@ const applicationSchema = new mongoose.Schema({
   appliedAt: {
     type: Date,
     default: Date.now,
-  }
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+  deletedAt: Date
 });
 
 const Application = mongoose.model('Application', applicationSchema);

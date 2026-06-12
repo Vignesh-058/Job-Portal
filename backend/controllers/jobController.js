@@ -1,178 +1,85 @@
-const Job = require('../models/Job');
-const Company = require('../models/Company');
+const JobService = require('../services/JobService');
+const AuditLog = require('../models/AuditLog');
 
-// @desc    Get all active jobs with advanced search and pagination
-// @route   GET /api/jobs
-// @access  Public
 const getJobs = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-
-    const query = { status: 'Active' };
-
-    if (req.query.title) {
-      query.title = { $regex: req.query.title, $options: 'i' };
-    }
-    if (req.query.location) {
-      query.location = { $regex: req.query.location, $options: 'i' };
-    }
-    if (req.query.jobType) {
-      query.type = req.query.jobType;
-    }
-    if (req.query.remote === 'true') {
-      query.type = 'remote';
-    }
-    if (req.query.salaryRange) {
-      // Basic salary parsing if implemented
-      query.salary = { $regex: req.query.salaryRange, $options: 'i' };
-    }
-
-    // Company filter requires finding company IDs first
-    if (req.query.company) {
-      const companies = await Company.find({ name: { $regex: req.query.company, $options: 'i' } });
-      const companyIds = companies.map(c => c._id);
-      query.companyId = { $in: companyIds };
-    }
-
-    const totalRecords = await Job.countDocuments(query);
-    const jobs = await Job.find(query)
-      .populate('companyId')
-      .skip(skip)
-      .limit(limit)
-      .sort({ createdAt: -1 });
-
-    res.status(200).json({
-      totalRecords,
-      totalPages: Math.ceil(totalRecords / limit),
-      currentPage: page,
-      data: jobs
-    });
+    const result = await JobService.getJobs(req.query);
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Get single job
-// @route   GET /api/jobs/:id
-// @access  Public
 const getJobById = async (req, res) => {
   try {
-    const job = await Job.findById(req.params.id)
-      .populate('recruiterId', 'name email')
-      .populate('companyId');
-    
-    if (!job) {
-      return res.status(404).json({ message: 'Job not found' });
-    }
-    
-    res.status(200).json(job);
+    const result = await JobService.getJobById(req.params.id);
+    res.status(200).json(result);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(404).json({ message: error.message });
   }
 };
 
-// @desc    Create a job
-// @route   POST /api/jobs
-// @access  Private/Recruiter
 const createJob = async (req, res) => {
   try {
-    const { title, companyId, location, salary, description, requirements, type, status } = req.body;
-
-    const job = new Job({
-      title,
-      companyId,
-      location,
-      salary,
-      description,
-      requirements,
-      type,
-      status: status || 'Active',
-      recruiterId: req.user._id
+    const result = await JobService.createJob(req.body, req.user._id);
+    
+    // Audit Logging
+    await AuditLog.create({
+      userId: req.user._id,
+      role: req.user.role,
+      action: 'Create Job',
+      resourceType: 'Job',
+      resourceId: result._id
     });
 
-    const createdJob = await job.save();
-    res.status(201).json(createdJob);
+    res.status(201).json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Update a job
-// @route   PUT /api/jobs/:id
-// @access  Private/Recruiter
 const updateJob = async (req, res) => {
   try {
-    const job = await Job.findById(req.params.id);
+    const result = await JobService.updateJob(req.params.id, req.body, req.user._id);
 
-    if (!job) {
-      return res.status(404).json({ message: 'Job not found' });
-    }
+    // Audit Logging
+    await AuditLog.create({
+      userId: req.user._id,
+      role: req.user.role,
+      action: 'Update Job',
+      resourceType: 'Job',
+      resourceId: result._id
+    });
 
-    if (job.recruiterId.toString() !== req.user._id.toString()) {
-      return res.status(401).json({ message: 'Not authorized to update this job' });
-    }
-
-    const updatedJob = await Job.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    ).populate('companyId');
-
-    res.status(200).json(updatedJob);
+    res.status(200).json(result);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(401).json({ message: error.message });
   }
 };
 
-// @desc    Delete a job
-// @route   DELETE /api/jobs/:id
-// @access  Private/Recruiter
 const deleteJob = async (req, res) => {
   try {
-    const job = await Job.findById(req.params.id);
+    const result = await JobService.deleteJob(req.params.id, req.user._id);
 
-    if (!job) {
-      return res.status(404).json({ message: 'Job not found' });
-    }
+    // Audit Logging
+    await AuditLog.create({
+      userId: req.user._id,
+      role: req.user.role,
+      action: 'Soft Delete Job',
+      resourceType: 'Job',
+      resourceId: req.params.id
+    });
 
-    if (job.recruiterId.toString() !== req.user._id.toString()) {
-      return res.status(401).json({ message: 'Not authorized to delete this job' });
-    }
-
-    await job.remove();
-
-    res.status(200).json({ message: 'Job removed' });
+    res.status(200).json(result);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(401).json({ message: error.message });
   }
 };
 
-// @desc    Get recruiter's jobs with pagination
-// @route   GET /api/jobs/my-jobs
-// @access  Private/Recruiter
 const getMyJobs = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-
-    const query = { recruiterId: req.user._id };
-    
-    const totalRecords = await Job.countDocuments(query);
-    const jobs = await Job.find(query)
-      .populate('companyId')
-      .skip(skip)
-      .limit(limit)
-      .sort({ createdAt: -1 });
-
-    res.status(200).json({
-      totalRecords,
-      totalPages: Math.ceil(totalRecords / limit),
-      currentPage: page,
-      data: jobs
-    });
+    const result = await JobService.getMyJobs(req.user._id, req.query);
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

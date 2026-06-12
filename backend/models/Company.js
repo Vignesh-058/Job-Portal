@@ -20,6 +20,11 @@ const companySchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+  deletedAt: Date,
   createdAt: {
     type: Date,
     default: Date.now,

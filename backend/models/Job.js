@@ -40,11 +40,23 @@ const jobSchema = new mongoose.Schema({
     enum: ['Active', 'Closed', 'Draft'],
     default: 'Active',
   },
+  experienceLevel: {
+    type: String,
+    enum: ['entry', 'mid', 'senior', 'executive'],
+    default: 'mid'
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+  deletedAt: Date,
   createdAt: {
     type: Date,
     default: Date.now,
   }
 });
+
+jobSchema.index({ title: 'text', description: 'text', location: 'text' });
 
 const Job = mongoose.model('Job', jobSchema);
 module.exports = Job;

@@ -31,13 +31,18 @@
       
       <div class="grid grid-2 mb-2">
         <div class="card" style="border-left: 4px solid var(--primary);">
-          <h3 class="text-muted" style="font-size: 1rem; margin-bottom: 0.5rem;">Total Jobs Posted</h3>
-          <p id="totalJobs" style="font-size: 2.5rem; font-weight: 700; color: var(--primary);">0</p>
+          <h3 class="text-muted" style="font-size: 1rem; margin-bottom: 0.5rem;">Total Applications</h3>
+          <p id="totalApplications" style="font-size: 2.5rem; font-weight: 700; color: var(--primary);">0</p>
         </div>
-        <div class="card" style="border-left: 4px solid var(--accent);">
-          <h3 class="text-muted" style="font-size: 1rem; margin-bottom: 0.5rem;">Active Jobs</h3>
-          <p id="activeJobs" style="font-size: 2.5rem; font-weight: 700; color: var(--accent);">0</p>
+        <div class="card" style="border-left: 4px solid var(--success);">
+          <h3 class="text-muted" style="font-size: 1rem; margin-bottom: 0.5rem;">Hiring Rate</h3>
+          <p id="hiringRate" style="font-size: 2.5rem; font-weight: 700; color: var(--success);">0%</p>
         </div>
+      </div>
+
+      <div class="card mb-2">
+        <h3 class="mb-1">Application Trends</h3>
+        <canvas id="trendsChart" width="400" height="150"></canvas>
       </div>
       
       <div class="card">
@@ -80,6 +85,7 @@
     </main>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="../js/auth.js"></script>
   <script src="../js/company.js"></script>
   <script src="../js/jobs.js"></script>
@@ -92,10 +98,52 @@
       }
 
       try {
-        const jobs = await getMyJobs();
+        // Fetch Dashboard Analytics
+        const analyticsRes = await fetch('http://localhost:5000/api/recruiter/analytics', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const analytics = await analyticsRes.json();
         
-        document.getElementById('totalJobs').innerText = jobs.length;
-        document.getElementById('activeJobs').innerText = jobs.filter(j => j.isActive).length;
+        document.getElementById('totalApplications').innerText = analytics.totalApplications || 0;
+        document.getElementById('hiringRate').innerText = analytics.hiringRate || '0%';
+
+        // Render Chart
+        if (analytics.monthlyTrends && analytics.monthlyTrends.length > 0) {
+          const ctx = document.getElementById('trendsChart').getContext('2d');
+          
+          const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          const labels = analytics.monthlyTrends.map(t => monthNames[t._id - 1]);
+          const data = analytics.monthlyTrends.map(t => t.count);
+
+          new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: 'Applications',
+                data: data,
+                borderColor: 'rgba(99, 102, 241, 1)',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3
+              }]
+            },
+            options: {
+              responsive: true,
+              scales: {
+                y: { beginAtZero: true }
+              }
+            }
+          });
+        }
+
+        // Fetch Recent Jobs
+        const jobsRes = await fetch('http://localhost:5000/api/jobs/my-jobs?limit=5', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const jobsData = await jobsRes.json();
+        const jobs = jobsData.data || [];
         
         const container = document.getElementById('recentJobsContainer');
         if (jobs.length === 0) {
@@ -104,15 +152,15 @@
         }
 
         let html = '<table><thead><tr><th>Title</th><th>Location</th><th>Type</th><th>Status</th><th>Action</th></tr></thead><tbody>';
-        jobs.slice(0, 5).forEach(job => {
+        jobs.forEach(job => {
           html += `
             <tr>
               <td style="font-weight: 500;">${job.title}</td>
               <td>${job.location}</td>
               <td><span class="badge" style="background: var(--border-color); color: var(--text-main);">${job.type}</span></td>
               <td>
-                <span class="badge ${job.isActive ? 'badge-shortlisted' : 'badge-rejected'}">
-                  ${job.isActive ? 'Active' : 'Closed'}
+                <span class="badge ${job.status === 'Active' ? 'badge-shortlisted' : 'badge-rejected'}">
+                  ${job.status}
                 </span>
               </td>
               <td>

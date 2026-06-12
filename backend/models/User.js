@@ -24,6 +24,23 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  // Enterprise Auth Fields
+  refreshToken: {
+    type: String
+  },
+  emailVerified: {
+    type: Boolean,
+    default: false
+  },
+  verificationToken: String,
+  resetPasswordToken: String,
+  resetPasswordExpire: Date,
+  // Soft Delete Fields
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+  deletedAt: Date,
   resumeUrl: {
     type: String,
     default: ''
