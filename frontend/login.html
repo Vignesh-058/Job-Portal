@@ -28,6 +28,9 @@
           <label for="password">Password</label>
           <input type="password" id="password" class="form-control" required placeholder="••••••••">
         </div>
+        <div style="text-align: right; margin-bottom: 1rem; margin-top: -0.5rem;">
+          <a href="./forgot-password.html" style="font-size: 0.9rem; color: var(--primary);">Forgot Password?</a>
+        </div>
         <button type="submit" class="btn btn-primary" style="width: 100%; font-size: 1.1rem; padding: 0.75rem;">Login</button>
       </form>
       <p class="text-center mt-1 text-muted">
@@ -38,6 +41,13 @@
 
   <script src="./js/auth.js"></script>
   <script>
+    // Show toast if redirected from email verification
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('verified') === 'true') {
+      showToast('Email verified successfully! You can now log in.');
+    } else if (urlParams.get('error') === 'verification_failed') {
+      showToast('Invalid or expired verification link.', 'error');
+    }
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       
@@ -56,10 +66,11 @@
           body: JSON.stringify({ email, password })
         });
         
-        const data = await response.json();
+        const responseData = await response.json();
         
-        if (response.ok) {
-          localStorage.setItem('token', data.token);
+        if (response.ok && responseData.success) {
+          const data = responseData.data;
+          localStorage.setItem('token', data.accessToken);
           localStorage.setItem('role', data.role);
           localStorage.setItem('user', JSON.stringify(data));
           
@@ -69,11 +80,16 @@
             if (data.role === 'recruiter') {
               window.location.href = './recruiter/dashboard.html';
             } else {
-              window.location.href = './jobseeker/dashboard.html';
+              const params = new URLSearchParams(window.location.search);
+              if (params.toString()) {
+                window.location.href = `./jobseeker/search-jobs.html?${params.toString()}`;
+              } else {
+                window.location.href = './jobseeker/dashboard.html';
+              }
             }
           }, 1000);
         } else {
-          showToast(data.message || 'Login failed', 'error');
+          showToast(responseData.message || 'Login failed', 'error');
           submitBtn.innerText = originalText;
           submitBtn.disabled = false;
         }

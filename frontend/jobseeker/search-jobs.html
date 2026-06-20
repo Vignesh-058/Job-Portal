@@ -120,6 +120,17 @@
       const user = JSON.parse(localStorage.getItem('user'));
       if (user) document.getElementById('userName').innerText = user.name;
       
+      // Populate inputs from URL query params if present
+      const params = new URLSearchParams(window.location.search);
+      const urlTitle = params.get('title') || params.get('keyword') || '';
+      const urlLocation = params.get('location') || '';
+      const urlType = params.get('type') || params.get('jobType') || '';
+      const urlJobId = params.get('jobId') || '';
+
+      if (urlTitle) document.getElementById('searchInput').value = urlTitle;
+      if (urlLocation) document.getElementById('locationInput').value = urlLocation;
+      if (urlType) document.getElementById('typeFilter').value = urlType;
+      
       // Debounce search
       let timeout = null;
       const delayedSearch = () => {
@@ -142,6 +153,10 @@
       });
 
       fetchJobs();
+
+      if (urlJobId) {
+        setTimeout(() => openModal(urlJobId), 500);
+      }
     });
 
     async function fetchJobs() {

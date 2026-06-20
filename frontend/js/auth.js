@@ -17,30 +17,40 @@ const authFetch = async (url, options = {}) => {
     headers
   });
 
-  const data = await response.json();
+  const responseData = await response.json();
 
-  if (!response.ok) {
-    throw new Error(data.message || 'Something went wrong');
+  if (!response.ok || (responseData && responseData.success === false)) {
+    throw new Error(responseData.message || 'Something went wrong');
   }
 
-  return data;
+  // Return the unwrapped data payload
+  return responseData.data !== undefined ? responseData.data : responseData;
 };
 
 // Check Auth state and redirect if needed
 const checkAuth = () => {
-  const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role');
+  let token = localStorage.getItem('token');
+  let role = localStorage.getItem('role');
   const currentPath = window.location.pathname;
 
+  // Fix for bad tokens from previous bugs
+  if (token === 'undefined' || token === 'null') {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('user');
+    token = null;
+    role = null;
+  }
+
   // Public pages
-  const publicPages = ['/index.html', '/login.html', '/register.html', '/'];
+  const publicPages = ['/index.html', '/login.html', '/register.html', '/', '/login', '/register', '/forgot-password.html', '/forgot-password', '/reset-password.html', '/reset-password'];
   
   if (!token && !publicPages.some(page => currentPath.endsWith(page))) {
     window.location.href = '/frontend/login.html';
     return;
   }
 
-  if (token && publicPages.some(page => currentPath.endsWith(page))) {
+  if (token && ['/login.html', '/register.html', '/login', '/register'].some(page => currentPath.endsWith(page))) {
     if (role === 'recruiter') {
       window.location.href = '/frontend/recruiter/dashboard.html';
     } else {

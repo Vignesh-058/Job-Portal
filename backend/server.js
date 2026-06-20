@@ -9,17 +9,27 @@ const compression = require('compression');
 const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const http = require('http');
+const RedisStore = require('rate-limit-redis').default;
+const redisClient = require('./src/utils/redis');
 
-const connectDB = require('./config/db');
-const logger = require('./config/logger');
-const socketConfig = require('./config/socket');
-const { errorHandler, notFound } = require('./middleware/errorMiddleware');
+const connectDB = require('./src/config/db');
+const logger = require('./src/config/logger');
+const socketConfig = require('./src/config/socket');
+const { errorHandler, notFound } = require('./src/middleware/errorMiddleware');
+
+// Start Workers (Skip in tests to prevent BullMQ connection loops)
+if (process.env.NODE_ENV !== 'test') {
+  require('./src/jobs/workers/emailWorker');
+  require('./src/jobs/workers/notificationWorker');
+}
 
 // Load env vars
 dotenv.config();
 
-// Connect to database
-connectDB();
+// Connect to Database
+if (process.env.NODE_ENV !== 'test') {
+  connectDB();
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -45,22 +55,43 @@ app.use(xss());
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 10 * 60 * 1000, // 10 mins
+  windowMs: 15 * 60 * 1000,
   max: 100,
-  message: 'Too many requests from this IP, please try again later.'
+  store: (process.env.NODE_ENV === 'test' || redisClient.isMock) ? undefined : new RedisStore({
+    sendCommand: (...args) => redisClient.call(...args),
+  }),
 });
 app.use('/api/', limiter);
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/jobs', require('./routes/jobs'));
-app.use('/api/applications', require('./routes/applications'));
-app.use('/api/profile', require('./routes/profile'));
-app.use('/api/admin', require('./routes/admin'));
-app.use('/api/company', require('./routes/company'));
-app.use('/api/notifications', require('./routes/notifications'));
-app.use('/api/saved-jobs', require('./routes/savedJobs'));
-app.use('/api/recruiter', require('./routes/recruiter'));
+const healthRoute = require('./src/api/v1/health');
+const authRoute = require('./src/api/v1/auth');
+const jobsRoute = require('./src/api/v1/jobs');
+const applicationsRoute = require('./src/api/v1/applications');
+const profileRoute = require('./src/api/v1/profile');
+const adminRoute = require('./src/api/v1/admin');
+const companyRoute = require('./src/api/v1/company');
+const notificationsRoute = require('./src/api/v1/notifications');
+const savedJobsRoute = require('./src/api/v1/savedJobs');
+const recruiterRoute = require('./src/api/v1/recruiter');
+
+app.use('/health', healthRoute);
+
+for (const prefix of ['/api/v1', '/api']) {
+  app.use(`${prefix}/auth`, authRoute);
+  app.use(`${prefix}/jobs`, jobsRoute);
+  app.use(`${prefix}/applications`, applicationsRoute);
+  app.use(`${prefix}/profile`, profileRoute);
+  app.use(`${prefix}/admin`, adminRoute);
+  app.use(`${prefix}/company`, companyRoute);
+  app.use(`${prefix}/notifications`, notificationsRoute);
+  app.use(`${prefix}/saved-jobs`, savedJobsRoute);
+  app.use(`${prefix}/recruiter`, recruiterRoute);
+}
+
+// Swagger Docs
+const swaggerDocs = require('./src/config/swagger');
+swaggerDocs(app);
 
 // Basic route
 app.get('/', (req, res) => {

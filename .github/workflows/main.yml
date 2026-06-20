@@ -14,6 +14,12 @@ jobs:
       matrix:
         node-version: [18.x]
 
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+
     steps:
     - uses: actions/checkout@v3
 
@@ -28,10 +34,14 @@ jobs:
       working-directory: ./backend
       run: npm ci
 
-    - name: Run Tests
+    - name: Run Tests & Generate Coverage
       working-directory: ./backend
-      run: npm test
+      run: npm test -- --coverage
       env:
         JWT_SECRET: test_secret
         JWT_REFRESH_SECRET: test_refresh_secret
         NODE_ENV: test
+        REDIS_URI: redis://localhost:6379
+
+    - name: Build Application
+      run: docker-compose build

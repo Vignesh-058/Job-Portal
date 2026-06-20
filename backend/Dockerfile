@@ -1,14 +1,22 @@
 FROM node:18-alpine
 
-# Create app directory
+# Set working directory
 WORKDIR /usr/src/app
 
-# Install app dependencies
+# Copy package files
 COPY package*.json ./
-RUN npm install --production
 
-# Bundle app source
+# Install production dependencies
+RUN npm ci --only=production
+
+# Copy source code
 COPY . .
 
+# Expose API port
 EXPOSE 5000
-CMD [ "npm", "start" ]
+
+# Set Node environment
+ENV NODE_ENV=production
+
+# Start the server
+CMD ["npm", "start"]

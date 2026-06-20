@@ -1,82 +1,84 @@
-# Enterprise Full Stack Role-Based Job Portal
+# Enterprise Role-Based Job Portal
 
-A production-ready, highly scalable Full Stack Role-Based Job Portal application designed for enterprise deployment.
+A production-grade, highly scalable Job Portal application featuring robust Role-Based Access Control (RBAC), background processing, real-time WebSockets, and enterprise security configurations.
 
-## 🚀 Enterprise Features
+## 🚀 Features
 
-### Architecture & Pattern
-* **MVC & Service Layer Pattern**: Clean abstraction of business logic from HTTP controllers.
-* **REST API Standards**: Fully documented, standardized JSON responses.
-* **Containerized Deployment**: Docker & Docker Compose setup.
-* **CI/CD Pipeline**: GitHub Actions for automated testing.
+- **RBAC Authentication**: Secure JWT-based auth separating Admins, Recruiters, and Job Seekers.
+- **Enterprise Security**: Implements `helmet`, `xss-clean`, `express-mongo-sanitize`, and Redis-backed rate limiting.
+- **Real-Time WebSockets**: Instant notifications for applications, status changes, and platform alerts using `socket.io`.
+- **Background Jobs**: Robust asynchronous job queues using `BullMQ` and Redis for email sending and heavy computations.
+- **Docker Ready**: Fully containerized using multi-stage builds and `docker-compose`.
+- **CI/CD Integrated**: Automated linting, security audits, and testing via GitHub Actions.
 
-### Advanced Authentication & Security
-* **Access & Refresh Tokens**: Short-lived (15m) access tokens and long-lived (7d) refresh tokens.
-* **Email Verification**: Nodemailer integration for account activation.
-* **Secure Password Recovery**: Automated reset links via email.
-* **Security Middleware**: Helmet, API rate limiting, XSS protection, NoSQL injection protection, API compression.
-* **Winston & Morgan Logging**: Comprehensive request and error tracking stored in `logs/`.
+## 🏗 Architecture & Tech Stack
 
-### Core Enterprise Modules
-* **Real-Time WebSockets**: Socket.io integration for instant recruiter notifications on new applications.
-* **Recruiter Analytics Dashboard**: Aggregation pipelines calculating Hiring Rates and Monthly Trends powered by Chart.js.
-* **Admin Audit Logs**: Automated tracking of all creation, update, and deletion events.
-* **Soft Delete System**: Resources (Users, Jobs, Companies) are flagged rather than permanently deleted, with Admin restore capabilities.
-* **Advanced Text Search**: Multi-field MongoDB Text Indexing for lightning-fast job discovery.
-* **Company Followers**: Job seekers can follow companies for future updates.
+- **Frontend**: Vanilla HTML/JS/CSS (Optimized and completely decoupled).
+- **Backend**: Node.js, Express.js.
+- **Database**: MongoDB (Mongoose Schema Validation).
+- **Caching & Queues**: Redis.
+- **Architecture Pattern**: Clean MVC (Routes → Controllers → Services → Repositories).
 
-## 🛠️ Technology Stack
+## 🛠 Installation & Setup
 
-* **Frontend**: HTML5, CSS3, Vanilla JS, Chart.js
-* **Backend**: Node.js, Express.js, Socket.io
-* **Database**: MongoDB, Mongoose
-* **Testing**: Jest, Supertest, MongoDB-Memory-Server
-* **Uploads & Email**: Multer, Cloudinary, Nodemailer
-* **DevOps**: Docker, GitHub Actions
+### Using Docker (Recommended)
 
-## ⚙️ Setup & Installation
+1. Ensure Docker and Docker Compose are installed.
+2. Clone the repository.
+3. Run the complete orchestration stack:
+   ```bash
+   docker-compose up -d --build
+   ```
+4. Access the application at `http://localhost:3000`.
 
-### Local Development (Docker)
-1. Provide a `.env` file in the root.
-2. Run `docker-compose up --build`.
+### Manual Setup
 
-### Local Development (Manual)
-1. Start local MongoDB.
-2. Provide `.env` in `backend/` with:
+1. **Install Dependencies**:
+   ```bash
+   cd backend
+   npm install
+   ```
+2. **Environment Variables**:
+   Create a `.env` file in the `backend` directory:
    ```env
    PORT=5000
-   MONGODB_URI=mongodb://127.0.0.1:27017/job-portal
-   JWT_SECRET=access_key
-   JWT_REFRESH_SECRET=refresh_key
-   CLOUDINARY_CLOUD_NAME=...
-   SMTP_HOST=...
-   SMTP_USER=...
-   SMTP_PASS=...
+   MONGO_URI=mongodb://localhost:27017/jobportal
+   REDIS_URL=redis://localhost:6379
+   JWT_SECRET=your_super_secret_jwt_key
+   JWT_REFRESH_SECRET=your_refresh_secret
+   NODE_ENV=development
    ```
-3. `npm run dev` in `backend`.
-
-## 🚢 Deployment Guide
-
-### Database (MongoDB Atlas)
-1. Create a cluster on MongoDB Atlas.
-2. Retrieve the connection string and set `MONGODB_URI`.
-
-### Backend (Render / Heroku)
-1. Connect your GitHub repository to Render as a Web Service.
-2. Set Build Command: `npm install`
-3. Set Start Command: `npm start`
-4. Add all Environment Variables.
-
-### Frontend (Vercel / Netlify)
-1. Ensure all API calls in `frontend/js/*.js` point to your deployed backend URL instead of `localhost:5000`.
-2. Connect your GitHub repository to Vercel/Netlify.
-3. Deploy the `frontend/` directory.
+3. **Start the backend**:
+   ```bash
+   npm run dev
+   ```
+4. **Start the frontend**:
+   Use `npx serve -l 3000` inside the project root, or use a Live Server extension on the `/frontend` directory.
 
 ## 🧪 Testing
-Run unit and integration tests with:
+
+We use Jest and Supertest for TDD and Integration Testing.
+
 ```bash
+cd backend
 npm run test
 ```
+*Coverage aims for >95% statements and branches.*
 
-## 📄 API Documentation
-See `API_DOCS.md` for complete API references including new endpoints for Refresh Tokens, Resets, Audit Logs, and Analytics.
+## 🔒 Security Posture
+
+- **Rate Limiting**: Throttles brute force login attempts using Redis.
+- **Data Sanitization**: Protects against NoSQL injection.
+- **Helmet**: Secures HTTP headers.
+- **CORS**: Strictly managed across environments.
+
+## 📖 API Documentation
+
+Swagger documentation is automatically generated. When the backend is running, visit:
+`http://localhost:5000/api-docs`
+
+## 🔮 Future Enhancements (Phase 2 & 3)
+
+- Complete React Migration (Next.js)
+- Job Recommendation Engine
+- Advanced Admin Analytics Dashboard

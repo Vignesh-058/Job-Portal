@@ -1,3 +1,7 @@
 node_modules
 .env
 .DS_Store
+all_codes.txt
+backend/logs/
+backend/coverage/
+backend/test-output.txt
