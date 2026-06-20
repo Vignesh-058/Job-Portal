@@ -81,6 +81,12 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--text-main);
   margin-bottom: 0.5rem;
   letter-spacing: -0.025em;
+  overflow-wrap: break-word;
+}
+
+p, span, div {
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 /* Layout Classes */
