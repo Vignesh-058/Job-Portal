@@ -41,8 +41,13 @@ socketConfig.init(server);
 app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
 
 // Security Middleware
-app.use(helmet());
-app.use(cors()); // Configure for production later
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+app.use(cors({
+  origin: process.env.FRONTEND_URL || '*',
+  credentials: true
+}));
 app.use(express.json());
 app.use(cookieParser());
 app.use(compression());

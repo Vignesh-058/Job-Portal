@@ -42,11 +42,11 @@ const logoutUser = async (req, res) => {
 const verifyEmail = async (req, res) => {
   try {
     const result = await AuthService.verifyEmail(req.params.token);
-    const frontendUrl = process.env.FRONTEND_APP_URL || 'http://localhost:3000';
-    return res.redirect(`${frontendUrl}/frontend/login.html?verified=true`);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    return res.redirect(`${frontendUrl}/login.html?verified=true`);
   } catch (error) {
-    const frontendUrl = process.env.FRONTEND_APP_URL || 'http://localhost:3000';
-    return res.redirect(`${frontendUrl}/frontend/login.html?error=verification_failed`);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    return res.redirect(`${frontendUrl}/login.html?error=verification_failed`);
   }
 };
 
