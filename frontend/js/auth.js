@@ -46,24 +46,24 @@ const checkAuth = () => {
   const publicPages = ['/index.html', '/login.html', '/register.html', '/', '/login', '/register', '/forgot-password.html', '/forgot-password', '/reset-password.html', '/reset-password'];
   
   if (!token && !publicPages.some(page => currentPath.endsWith(page))) {
-    window.location.href = '/frontend/login.html';
+    window.location.href = '/login.html';
     return;
   }
 
   if (token && ['/login.html', '/register.html', '/login', '/register'].some(page => currentPath.endsWith(page))) {
     if (role === 'recruiter') {
-      window.location.href = '/frontend/recruiter/dashboard.html';
+      window.location.href = '/recruiter/dashboard.html';
     } else {
-      window.location.href = '/frontend/jobseeker/dashboard.html';
+      window.location.href = '/jobseeker/dashboard.html';
     }
   }
 
   // Role guards
   if (token && currentPath.includes('/recruiter/') && role !== 'recruiter') {
-    window.location.href = '/frontend/jobseeker/dashboard.html';
+    window.location.href = '/jobseeker/dashboard.html';
   }
   if (token && currentPath.includes('/jobseeker/') && role !== 'jobseeker') {
-    window.location.href = '/frontend/recruiter/dashboard.html';
+    window.location.href = '/recruiter/dashboard.html';
   }
 };
 
@@ -71,7 +71,7 @@ const logout = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('role');
   localStorage.removeItem('user');
-  window.location.href = '/frontend/login.html';
+  window.location.href = '/login.html';
 };
 
 // Toast notification helper
