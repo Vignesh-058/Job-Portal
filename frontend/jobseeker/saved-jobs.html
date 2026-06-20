@@ -66,16 +66,23 @@
         const res = await fetch('https://job-portal-8lb8.onrender.com/api/v1/saved-jobs', {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
-        const data = await res.json();
+        const responseData = await res.json();
+        
+        let savedJobs = [];
+        if (responseData.data && Array.isArray(responseData.data)) {
+          savedJobs = responseData.data;
+        } else if (Array.isArray(responseData)) {
+          savedJobs = responseData;
+        }
         
         const grid = document.getElementById('savedJobsGrid');
-        if (data.length === 0) {
+        if (savedJobs.length === 0) {
           grid.innerHTML = '<p class="text-muted" style="grid-column: 1 / -1;">You have no saved jobs.</p>';
           return;
         }
 
         let html = '';
-        data.forEach(item => {
+        savedJobs.forEach(item => {
           const job = item.jobId;
           const avatarUrl = job.companyId?.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(job.companyId?.name || 'Company')}&background=random&color=fff&rounded=true&bold=true`;
           
