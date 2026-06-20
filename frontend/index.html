@@ -224,7 +224,14 @@
         const response = await fetch('https://job-portal-8lb8.onrender.com/api/jobs');
         const result = await response.json();
         
-        const jobs = Array.isArray(result) ? result : (result.data || []);
+        let jobs = [];
+        if (Array.isArray(result)) {
+          jobs = result;
+        } else if (result.data && Array.isArray(result.data.data)) {
+          jobs = result.data.data;
+        } else if (result.data && Array.isArray(result.data)) {
+          jobs = result.data;
+        }
         
         if (jobs.length === 0) {
           jobsContainer.innerHTML = '<p class="text-center text-muted" style="grid-column: 1 / -1; font-size: 1.1rem; padding: 2rem 0;">No active featured jobs found at the moment.</p>';

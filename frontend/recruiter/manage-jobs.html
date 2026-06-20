@@ -50,7 +50,15 @@
     async function loadJobs() {
       const container = document.getElementById('jobsContainer');
       try {
-        const jobs = await getMyJobs();
+        const jobsResponse = await getMyJobs();
+        
+        // Extract array from paginated format if necessary
+        let jobs = [];
+        if (jobsResponse.data && Array.isArray(jobsResponse.data)) {
+          jobs = jobsResponse.data;
+        } else if (Array.isArray(jobsResponse)) {
+          jobs = jobsResponse;
+        }
         
         if (jobs.length === 0) {
           container.innerHTML = '<p class="text-muted text-center p-2">No jobs found. Start by posting one!</p>';

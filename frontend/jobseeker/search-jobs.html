@@ -171,17 +171,18 @@
 
       try {
         const res = await fetch(url);
-        const data = await res.json();
+        const jsonResponse = await res.json();
         
-        if (!res.ok) throw new Error(data.message);
+        if (!res.ok) throw new Error(jsonResponse.message);
         
-        totalPages = data.totalPages;
-        document.getElementById('pageInfo').innerText = `Page ${data.currentPage} of ${data.totalPages || 1}`;
-        document.getElementById('prevPageBtn').disabled = data.currentPage <= 1;
-        document.getElementById('nextPageBtn').disabled = data.currentPage >= data.totalPages;
+        const paginationData = jsonResponse.data;
+        totalPages = paginationData.totalPages;
+        document.getElementById('pageInfo').innerText = `Page ${paginationData.currentPage} of ${paginationData.totalPages || 1}`;
+        document.getElementById('prevPageBtn').disabled = paginationData.currentPage <= 1;
+        document.getElementById('nextPageBtn').disabled = paginationData.currentPage >= paginationData.totalPages;
         document.getElementById('pagination').style.display = 'flex';
 
-        renderJobs(data.data);
+        renderJobs(paginationData.data);
       } catch (error) {
         document.getElementById('jobsGrid').innerHTML = '<p class="text-danger">Failed to load jobs.</p>';
       }

@@ -143,7 +143,16 @@
           headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const jobsData = await jobsRes.json();
-        const jobs = jobsData.data || [];
+        
+        // Handle paginated response structure
+        let jobs = [];
+        if (jobsData.data && Array.isArray(jobsData.data.data)) {
+          jobs = jobsData.data.data;
+        } else if (jobsData.data && Array.isArray(jobsData.data)) {
+          jobs = jobsData.data;
+        } else if (Array.isArray(jobsData)) {
+          jobs = jobsData;
+        }
         
         const container = document.getElementById('recentJobsContainer');
         if (jobs.length === 0) {

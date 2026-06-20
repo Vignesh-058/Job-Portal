@@ -51,7 +51,14 @@
     async function loadApplications() {
       const container = document.getElementById('applicationsContainer');
       try {
-        const apps = await getMyApplications();
+        const response = await getMyApplications();
+        
+        let apps = [];
+        if (response.data && Array.isArray(response.data)) {
+          apps = response.data;
+        } else if (Array.isArray(response)) {
+          apps = response;
+        }
         
         if (apps.length === 0) {
           container.innerHTML = '<p class="text-muted text-center p-2">You haven\'t applied to any jobs yet.</p>';
