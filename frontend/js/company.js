@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const description = document.getElementById('companyDescription').value;
 
       try {
-        const response = await fetch('http://localhost:5000/api/company', {
+        const response = await fetch('https://job-portal-8lb8.onrender.com/api/v1/company', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!companiesList) return;
     
     try {
-      const response = await fetch('http://localhost:5000/api/company/my', {
+      const response = await fetch('https://job-portal-8lb8.onrender.com/api/v1/company/my', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

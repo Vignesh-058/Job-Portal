@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://job-portal-8lb8.onrender.com/api/v1';
 
 const fetchWithToken = async (url, options = {}) => {
   const token = localStorage.getItem('token');

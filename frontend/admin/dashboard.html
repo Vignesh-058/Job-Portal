@@ -144,7 +144,7 @@
 
     async function loadAuditLogs() {
       try {
-        const res = await fetch('http://localhost:5000/api/admin/audit-logs', {
+        const res = await fetch('https://job-portal-8lb8.onrender.com/api/v1/admin/audit-logs', {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const data = await res.json();
@@ -180,7 +180,7 @@
       if (!id) return showToast('Please enter a resource ID', 'error');
 
       try {
-        const res = await fetch(`http://localhost:5000/api/admin/restore/${id}`, {
+        const res = await fetch(`https://job-portal-8lb8.onrender.com/api/v1/admin/restore/${id}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',

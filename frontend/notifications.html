@@ -80,7 +80,7 @@
       }
       
       try {
-        const res = await fetch('http://localhost:5000/api/notifications', {
+        const res = await fetch('https://job-portal-8lb8.onrender.com/api/v1/notifications', {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const data = await res.json();
@@ -112,7 +112,7 @@
 
     window.markRead = async (id) => {
       try {
-        const res = await fetch(`http://localhost:5000/api/notifications/${id}/read`, {
+        const res = await fetch(`https://job-portal-8lb8.onrender.com/api/v1/notifications/${id}/read`, {
           method: 'PATCH',
           headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });

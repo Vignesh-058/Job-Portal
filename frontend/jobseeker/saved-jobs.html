@@ -63,7 +63,7 @@
       if (user) document.getElementById('userName').innerText = user.name;
       
       try {
-        const res = await fetch('http://localhost:5000/api/saved-jobs', {
+        const res = await fetch('https://job-portal-8lb8.onrender.com/api/v1/saved-jobs', {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const data = await res.json();
@@ -108,7 +108,7 @@
 
     window.removeSavedJob = async (id) => {
       try {
-        const res = await fetch(`http://localhost:5000/api/saved-jobs/${id}`, {
+        const res = await fetch(`https://job-portal-8lb8.onrender.com/api/v1/saved-jobs/${id}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });

@@ -164,7 +164,7 @@
       const location = document.getElementById('locationInput').value;
       const type = document.getElementById('typeFilter').value;
       
-      let url = `http://localhost:5000/api/jobs?page=${currentPage}&limit=6`;
+      let url = `https://job-portal-8lb8.onrender.com/api/v1/jobs?page=${currentPage}&limit=6`;
       if (title) url += `&title=${encodeURIComponent(title)}`;
       if (location) url += `&location=${encodeURIComponent(location)}`;
       if (type) url += `&jobType=${encodeURIComponent(type)}`;
@@ -280,7 +280,7 @@
     document.getElementById('saveJobBtn').addEventListener('click', async () => {
       if (!currentJobId) return;
       try {
-        const res = await fetch(`http://localhost:5000/api/saved-jobs/${currentJobId}`, {
+        const res = await fetch(`https://job-portal-8lb8.onrender.com/api/v1/saved-jobs/${currentJobId}`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });

@@ -125,7 +125,7 @@
         btn.innerText = 'Uploading...';
         btn.disabled = true;
 
-        const res = await fetch('http://localhost:5000/api/profile/upload-resume', {
+        const res = await fetch('https://job-portal-8lb8.onrender.com/api/v1/profile/upload-resume', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -146,7 +146,7 @@
     window.removeResume = async () => {
       if (confirm('Are you sure you want to delete your resume?')) {
         try {
-          const res = await fetch('http://localhost:5000/api/profile/remove-resume', {
+          const res = await fetch('https://job-portal-8lb8.onrender.com/api/v1/profile/remove-resume', {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`

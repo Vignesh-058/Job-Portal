@@ -99,7 +99,7 @@
 
       try {
         // Fetch Dashboard Analytics
-        const analyticsRes = await fetch('http://localhost:5000/api/recruiter/analytics', {
+        const analyticsRes = await fetch('https://job-portal-8lb8.onrender.com/api/v1/recruiter/analytics', {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const analytics = await analyticsRes.json();
@@ -139,7 +139,7 @@
         }
 
         // Fetch Recent Jobs
-        const jobsRes = await fetch('http://localhost:5000/api/jobs/my-jobs?limit=5', {
+        const jobsRes = await fetch('https://job-portal-8lb8.onrender.com/api/v1/jobs/my-jobs?limit=5', {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const jobsData = await jobsRes.json();
